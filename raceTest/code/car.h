@@ -32,6 +32,12 @@ public:
     // Timer Move Coords
     int timerMoveId;
 
+    // Bools
+    bool keyRight;
+    bool keyLeft;
+    bool keyUp;
+    bool keyDown;
+
 signals:
 
 public slots:
@@ -44,6 +50,12 @@ public slots:
     void setWheelsAngle(float newAngle);
     void correctAngle(float &val);
     void correctVal(float min, float max, float &val);
+    void limitVal(float min, float max, float &val);
+    void keysEvent();
+    void keyRightEvent();
+    void keyLeftEvent();
+    void keyUpEvent();
+    void keyDownEvent();
     void timerEvent(QTimerEvent *);
 };
 
