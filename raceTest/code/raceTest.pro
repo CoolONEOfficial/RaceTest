@@ -18,10 +18,14 @@ QMAKE_TARGET_COPYRIGHT = Nickolay Trukhin
 
 SOURCES += main.cpp\
         widget.cpp \
-    car.cpp
+    car.cpp \
+    wheel.cpp \
+    track.cpp
 
 HEADERS  += widget.h \
-    car.h
+    car.h \
+    wheel.h \
+    track.h
 
 FORMS    += widget.ui
 

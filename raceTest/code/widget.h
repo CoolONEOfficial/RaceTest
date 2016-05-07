@@ -1,8 +1,8 @@
 #ifndef WIDGET_H
 #define WIDGET_H
 
-#include <QWidget>
 #include <car.h>
+#include <QWidget>
 
 namespace Ui {
 class Widget;
@@ -19,11 +19,11 @@ public:
     // Fps
     static const int fps = 60;
 
-    //
+    // BaseDir
     QString baseDir;
 
     // Player
-    Car player;
+    Car *player;
 
     // Images
     QImage backgroundTexture;
@@ -37,6 +37,9 @@ public:
     bool keyUpPressed;
     bool keyDownPressed;
 
+public slots:
+    void loadImage(QImage &image, const QString &imageName );
+
 private slots:
     void paintEvent(QPaintEvent *);
     void drawTexture(QPainter &p, QImage texture, int startX = 0, int startY = 0);
@@ -45,7 +48,8 @@ private slots:
     void timerEvent(QTimerEvent *);
     void setValues();
     void loadAll();
-   void loadImage(QImage &image, const QString &imageName );
+    void createAll();
+    void addAll();
 
 private:
     Ui::Widget *ui;
