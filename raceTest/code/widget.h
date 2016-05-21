@@ -3,6 +3,7 @@
 
 #include <car.h>
 #include <QWidget>
+#include <QVector>
 
 namespace Ui {
 class Widget;
@@ -27,6 +28,9 @@ public:
 
     // Images
     QImage backgroundTexture;
+
+    // Collision Masks
+    QVector< QVector<QLine> > cMasks;
 
     // Timer Update
     int timerUpdateId;

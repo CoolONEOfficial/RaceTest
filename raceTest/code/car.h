@@ -17,32 +17,24 @@ public:
     // Widget
     Widget *w;
 
-//    static const int memoryTrack = 50;
-
     // Coords
     float x, y;
-    QVector<QPointF> trackCoords;
 
     // Angles
     float angle, whellsAngle;
 
     // Speed
     float speed;
-    float maxSpeed;
-    float maxBackSpeed;
+    float speedForwardMax;
+    float speedBackMax;
     float speedScale();
 
     // Wheels
-    float wheelsWidth;
-    float wheelsHeight;
-    QVector<Wheel*> staticWheels, manualWheels;
-
-    // Sensitive
-    int sensitive;
+    QVector<Wheel*> wheelsStatic, wheelsManual;
 
     // Boost
-    float boost;
-    float backBoost;
+    float boostForward;
+    float boostBack;
 
     // Image
     QImage image;
@@ -52,6 +44,7 @@ public:
 
     // Timer Move Coords
     int timerMoveId;
+    int timerRotateId;
 
     // Bools
     bool keyRight;
@@ -70,7 +63,6 @@ signals:
 public slots:
     void setWidget(Widget *widget);
     void draw(QPainter &p);
-    void drawTrack(QPainter &p);
     void drawWheels(QPainter &p, float carAngle);
     void drawCar(QPainter &p, float carAngle);
     void loadImage(QString name);
@@ -89,8 +81,9 @@ public slots:
     void keyUpEvent();
     void keyDownEvent();
     void timerEvent(QTimerEvent *);
-    void addWheelStatic(int x,int y, int width, int height);
-    void addWheelManual(int x,int y, int width, int height);
+    void addWheelStatic(Wheel *wheelStatic);
+    void addWheelManual(Wheel *wheelManual);
+    void startDrift();
 };
 
 #endif // CAR_H

@@ -50,10 +50,10 @@ void Widget::setValues()
 void Widget::loadAll()
 {
     // Car Image
-    player->loadImage("sprites\\car\\main\\car.png");
+    player->loadImage("sprites/car/main/car.png");
 
     // Background Texture
-    loadImage(backgroundTexture, "textures\\background\\texture.jpg");
+    loadImage(backgroundTexture, "textures/background/texture.jpg");
 }
 
 void Widget::createAll()
@@ -67,8 +67,8 @@ void Widget::createAll()
 void Widget::addAll()
 {
     // Wheels
-    player->addWheelManual(player->carWidth()/6, player->carHeight()/5, 20, 10);
-    player->addWheelStatic(-player->carWidth()/6, player->carHeight()/5, 20, 10);
+    player->addWheelManual(new Wheel(this, player->width()/3, player->height()/2, 20, 10));
+    player->addWheelStatic(new Wheel(this, -player->width()/3, player->height()/2, 20, 10));
 }
 
 void Widget::paintEvent(QPaintEvent *)
@@ -84,20 +84,36 @@ void Widget::paintEvent(QPaintEvent *)
     // Draw Player
     player->draw(p);
 
-//    QLineF line(1000, 0, 1000, height());
-//    p.drawLine(line);
+    QBrush brush;
+    brush.setStyle(Qt::SolidPattern);
+    brush.setColor(QColor(255, 255, 255, 100));
+    p.setBrush(brush);
+    p.drawRect(0,0, width(), 150);
 
-//    // Draw Debug Texts
-//    p.drawText(5, 15*1, "x: "+QString::number(player->x));
-//    p.drawText(5, 15*2, "y: "+QString::number(player->y));
-//    p.drawText(5, 15*3, "Speed: "+QString::number(player->speed));
-//    p.drawText(5, 15*4, "Angle: "+QString::number(player->angle));
-//    p.drawText(5, 15*5, "WheelsAngle: "+QString::number(player->whellsAngle));
+    // Draw Debug Texts
+    p.drawText(5, 15*1, "x: "+QString::number(player->x));
+    p.drawText(5, 15*2, "y: "+QString::number(player->y));
+    p.drawText(5, 15*3, "Speed: "+QString::number(player->speed));
+    p.drawText(5, 15*4, "Angle: "+QString::number(player->angle));
+    p.drawText(5, 15*5, "WheelsAngle: "+QString::number(player->whellsAngle));
+    p.drawText(5, 15*6, "SpeedScale: "+QString::number(player->speedScale()));
 
-//    for(int f = 0; f<player->staticWheels[0]->trackCoords.size(); f++)
-//    {
-//        p.drawText(20, 20+15*f, "x:"+QString::number(player->staticWheels[1]->trackCoords[f]->x)+" y:"+QString::number(player->staticWheels[1]->trackCoords[f]->y) );
-//    }
+    // Wheels
+    for(int f = 0; f<player->wheelsManual.size(); f++)
+    {
+        p.drawText(f*100+200, 15*1, "Wheel "+QString::number(f));
+        p.drawText(f*100+200, 15*2, "X: "+QString::number(player->wheelsManual[f]->x)+
+                                                      " Y: "+QString::number(player->wheelsManual[f]->y));
+        p.drawText(f*100+200, 15*3, "Branches: "+QString::number(player->wheelsManual[f]->tracks.size()));
+
+        if(true)
+        {
+            for(int f2 = 0; f2<player->wheelsManual[f]->tracks.size(); f2++)
+            {
+                p.drawText(f*100+200, 15*(4+f2), "size: "+QString::number(player->wheelsManual[f]->tracks[f2].size()));
+            }
+        }
+    }
 }
 
 void Widget::keyPressEvent(QKeyEvent *event)
@@ -146,36 +162,40 @@ void Widget::keyPressEvent(QKeyEvent *event)
 
 void Widget::keyReleaseEvent(QKeyEvent *event)
 {
-    // W / Up / Gas
-    if(event->key() == Qt::Key_W ||
-       event->key() == Qt::Key_Up)
+    if(!event->isAutoRepeat())
     {
-        keyUpPressed = false;
-        player->keyUp = false;
-    }
+        // W / Up / Gas
+        if(event->key() == Qt::Key_W ||
+           event->key() == Qt::Key_Up)
+        {
+            keyUpPressed = false;
+            player->keyUp = false;
+        }
 
-    // S / Down / Brake
-    else if(event->key() == Qt::Key_S ||
-            event->key() == Qt::Key_Down)
-    {
-        keyDownPressed = false;
-        player->keyDown = false;
-    }
+        // S / Down / Brake
+        else if(event->key() == Qt::Key_S ||
+                event->key() == Qt::Key_Down)
+        {
+            keyDownPressed = false;
+            player->keyDown = false;
+            player->startDrift();
+        }
 
-    // A / Left
-    if(event->key() == Qt::Key_A ||
-       event->key() == Qt::Key_Left)
-    {
-        keyLeftPressed = false;
-        player->keyLeft = false;
-    }
+        // A / Left
+        if(event->key() == Qt::Key_A ||
+           event->key() == Qt::Key_Left)
+        {
+            keyLeftPressed = false;
+            player->keyLeft = false;
+        }
 
-    // D / Right
-    else if(event->key() == Qt::Key_D ||
-            event->key() == Qt::Key_Right)
-    {
-        keyRightPressed = false;
-        player->keyRight = false;
+        // D / Right
+        else if(event->key() == Qt::Key_D ||
+                event->key() == Qt::Key_Right)
+        {
+            keyRightPressed = false;
+            player->keyRight = false;
+        }
     }
 }
 
@@ -191,9 +211,11 @@ void Widget::timerEvent(QTimerEvent *event)
 
 void Widget::loadImage(QImage &image, const QString &imageName)
 {
-    if( !image.load(baseDir+"\\images\\"+imageName))
+    QString path = baseDir+"/images/"+imageName;
+
+    if( !image.load(path))
     {
-        QMessageBox::information(this,"Error load image",baseDir+"\\images\\"+imageName);
+        QMessageBox::information(this,"Error load image", path);
     }
 }
 

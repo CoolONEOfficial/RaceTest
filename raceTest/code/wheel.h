@@ -1,7 +1,6 @@
 #ifndef WHEEL_H
 #define WHEEL_H
 
-#include "track.h"
 #include <QObject>
 #include <QImage>
 
@@ -11,15 +10,14 @@ class Wheel : public QObject
 {
     Q_OBJECT
 public:
-    explicit Wheel(QObject *parent = 0, bool wManual = true, float wAngle = 0, float wX = 0, float wY = 0, float wW = 40, float wH = 20);
-    explicit Wheel(QObject *parent = 0, bool wManual = false, float wX = 0, float wY = 0, float wW = 40, float wH = 20);
+    explicit Wheel(QObject *parent, float wX, float wY, float wW, float wH);
+    explicit Wheel(QObject *parent);
 
     // Widget
     Widget *w;
 
-    // Track
-//    static const int memoryTrack = 60;
-    QVector<Track*> trackCoords;
+    // Tracks
+    QVector< QVector<QPointF> > tracks;
 
     // Size
     float width;
@@ -28,22 +26,19 @@ public:
     // Coords
     float x,y;
 
-    // Type
-    bool manual;
-    float angle;
-
-    // Timer Track
-    int timerTrackId;
+    // Timers Id
+    int timerDeleteId;
 
 signals:
 
 public slots:
-    void loadImage(QImage &image, const QString &imageName);
+    void setParams(float wX, float wY, float wW, float wH);
     void setWidget(Widget *widget);
-    void addTrack(float x, float y, float angle);
-//    void addTrack(Track *newTrack);
-    void skipTrackCoords();
-    void draw(QPainter &p);
+    void addTrack(QPointF wTrack);
+    void addTrack(int x, int y);
+    void addTrackBranch();
+    void draw(QPainter &p, float wAngle, bool rotate);
+    void drawTracks(QPainter &p);
     void timerEvent(QTimerEvent *event);
 };
 
