@@ -26,6 +26,8 @@ Widget::Widget(QWidget *parent) :
 
     // Fullscreen
     showFullScreen();
+
+    timerFpsId = startTimer(1000);
 }
 
 Widget::~Widget()
@@ -35,9 +37,6 @@ Widget::~Widget()
 
 void Widget::setValues()
 {
-    // BaseDir
-    baseDir = QApplication::applicationDirPath();
-
     // Bools
 
     // Keys
@@ -50,10 +49,10 @@ void Widget::setValues()
 void Widget::loadAll()
 {
     // Car Image
-    player->loadImage("sprites/car/main/car.png");
+    player->loadImage(":/car");
 
     // Background Texture
-    loadImage(backgroundTexture, "textures/background/texture.jpg");
+    loadImage(backgroundTexture, ":/texture");
 }
 
 void Widget::createAll()
@@ -68,22 +67,57 @@ void Widget::addAll()
 {
     // Wheels
     player->addWheelManual(new Wheel(this, player->width()/3, player->height()/2, 20, 10));
+
     player->addWheelStatic(new Wheel(this, -player->width()/3, player->height()/2, 20, 10));
+
+    CMask *mask = new CMask(this, 200,200, QRect(-10,-10,20,20), backgroundTexture);
+
+    addFigure(mask);
 }
 
-void Widget::paintEvent(QPaintEvent *)
+void Widget::addFigure(CMask *cMask)
+{
+    // Add figure cMask
+    cMasks.push_back(cMask);
+}
+
+void Widget::
+paintEvent(QPaintEvent *)
 {
     QPainter p(this);
 
     // Antialiasing
     p.setRenderHints(QPainter::Antialiasing);
 
+    // Translate
+    p.translate(-cam.x(), -cam.y());
+
+    p.translate(player->x, player->y);
+    p.rotate(-player->angle / M_PI * 180.0 - 90);
+    p.translate(-player->x, -player->y);
+
     // Draw Background Texture
-    drawTexture(p, backgroundTexture, 0, 0);
+    drawTexture(p, backgroundTexture, QRectF(-width()*2, -height()*2, width()*4, height()*4));
+
+    // Draw collision masks
+    for(int f = 0; f<cMasks.size(); f++)
+    {
+        cMasks[f]->draw(p);
+    }
 
     // Draw Player
     player->draw(p);
 
+    // Untranslate
+    p.translate(player->x, player->y);
+    p.rotate((player->angle / M_PI * 180.0 + 90));
+    p.translate(-player->x, -player->y);
+
+    p.translate(cam.x(), cam.y());
+
+    // Debug
+
+    // Rect
     QBrush brush;
     brush.setStyle(Qt::SolidPattern);
     brush.setColor(QColor(255, 255, 255, 100));
@@ -93,10 +127,36 @@ void Widget::paintEvent(QPaintEvent *)
     // Draw Debug Texts
     p.drawText(5, 15*1, "x: "+QString::number(player->x));
     p.drawText(5, 15*2, "y: "+QString::number(player->y));
-    p.drawText(5, 15*3, "Speed: "+QString::number(player->speed));
-    p.drawText(5, 15*4, "Angle: "+QString::number(player->angle));
-    p.drawText(5, 15*5, "WheelsAngle: "+QString::number(player->whellsAngle));
-    p.drawText(5, 15*6, "SpeedScale: "+QString::number(player->speedScale()));
+    p.drawText(5, 15*3, "camX: "+QString::number(cam.x()));
+    p.drawText(5, 15*4, "camY: "+QString::number(cam.y()));
+    p.drawText(5, 15*5, "Speed: "+QString::number(player->speed));
+    p.drawText(5, 15*6, "Angle: "+QString::number(player->angle));
+    p.drawText(5, 15*7, "WheelsAngle: "+QString::number(player->whellsAngle));
+    p.drawText(5, 15*8, "SpeedScale: "+QString::number(player->speedScale()));
+    p.drawText(5, 15*9, "Fps: "+QString::number(debugFps));
+
+    // Keys debug
+    if(keyUpPressed)
+    {
+        p.drawRect(width()-80, 10, 30, 30);
+        p.drawLine(width()-80+15, 15, width()-80+15, 35);
+        p.drawLine(width()-80+15, 15, width()-80+10, 25);
+        p.drawLine(width()-80+15, 15, width()-80+20, 25);
+    }
+
+    if(keyDownPressed)
+    {
+        p.drawRect(width()-80, 50, 30, 30);
+        p.drawLine(width()-80+15, 55, width()-80+15, 50+25);
+        p.drawLine(width()-80+15, 50+25, width()-80+15-5, 50+25-10);
+        p.drawLine(width()-80+15, 50+25, width()-80+15+5, 50+25-10);
+    }
+
+    if(keyRightPressed)
+        p.drawRect(width()-40, 50, 30, 30);
+
+    if(keyLeftPressed)
+        p.drawRect(width()-120, 50, 30, 30);
 
     // Wheels
     for(int f = 0; f<player->wheelsManual.size(); f++)
@@ -106,12 +166,22 @@ void Widget::paintEvent(QPaintEvent *)
                                                       " Y: "+QString::number(player->wheelsManual[f]->y));
         p.drawText(f*100+200, 15*3, "Branches: "+QString::number(player->wheelsManual[f]->tracks.size()));
 
-        if(true)
+        for(int f2 = 0; f2<player->wheelsManual[f]->tracks.size(); f2++)
         {
-            for(int f2 = 0; f2<player->wheelsManual[f]->tracks.size(); f2++)
-            {
-                p.drawText(f*100+200, 15*(4+f2), "size: "+QString::number(player->wheelsManual[f]->tracks[f2].size()));
-            }
+            p.drawText(f*100+200, 15*(4+f2), "size: "+QString::number(player->wheelsManual[f]->tracks[f2].size()));
+        }
+    }
+
+    for(int f = 0; f<player->wheelsStatic.size(); f++)
+    {
+        p.drawText(f*100+500, 15*1, "Wheel "+QString::number(f));
+        p.drawText(f*100+500, 15*2, "X: "+QString::number(player->wheelsStatic[f]->x)+
+                                                      " Y: "+QString::number(player->wheelsStatic[f]->y));
+        p.drawText(f*100+500, 15*3, "Branches: "+QString::number(player->wheelsStatic[f]->tracks.size()));
+
+        for(int f2 = 0; f2<player->wheelsStatic[f]->tracks.size(); f2++)
+        {
+            p.drawText(f*100+500, 15*(4+f2), "size: "+QString::number(player->wheelsStatic[f]->tracks[f2].size()));
         }
     }
 }
@@ -170,6 +240,7 @@ void Widget::keyReleaseEvent(QKeyEvent *event)
         {
             keyUpPressed = false;
             player->keyUp = false;
+            player->addTrackBranches();
         }
 
         // S / Down / Brake
@@ -178,7 +249,7 @@ void Widget::keyReleaseEvent(QKeyEvent *event)
         {
             keyDownPressed = false;
             player->keyDown = false;
-            player->startDrift();
+            player->addTrackBranches();
         }
 
         // A / Left
@@ -207,11 +278,18 @@ void Widget::timerEvent(QTimerEvent *event)
         // Update
         update();
     }
+
+    // FPS Timer
+    else if(event->timerId() == timerFpsId)
+    {
+        debugFps = timerFps;
+        timerFps = 0;
+    }
 }
 
 void Widget::loadImage(QImage &image, const QString &imageName)
 {
-    QString path = baseDir+"/images/"+imageName;
+    QString path = imageName;
 
     if( !image.load(path))
     {
@@ -219,14 +297,32 @@ void Widget::loadImage(QImage &image, const QString &imageName)
     }
 }
 
-void Widget::drawTexture(QPainter &p, QImage texture, int startX, int startY)
+void Widget::drawTexture(QPainter &p, QImage texture, QRectF rect)
 {
     // Draw Texture
-    for(int numX = 0; numX < width() / (texture.width()+startX) + 1; numX++)
-    {
-        for(int numY = 0; numY < height() / (texture.height()+startY) + 1; numY++)
-        {
-            p.drawImage(startX + numX * texture.width(), startY + numY * texture.height(), texture);
-        }
-    }
+
+    // Create Brush/Pen
+    QBrush oldBrush = p.brush(), brush;
+
+    // Set Texture
+    brush.setTextureImage(texture);
+
+    // Set Brush
+    p.setBrush(brush);
+
+    // Set Coords
+    rect.setCoords( 0,  0,
+                    rect.width(),  rect.height());
+
+    // Translate
+    p.translate(rect.x(), rect.y());
+
+    // Draw texture
+    p.drawRect(rect);
+
+    // Untranslate
+    p.translate(-(rect.x()), -(rect.y()));
+
+    // Reset brush/Pen
+    p.setBrush(oldBrush);
 }

@@ -2,8 +2,11 @@
 #define WIDGET_H
 
 #include <car.h>
+#include <cmask.h>
+#include <animationcoords.h>
 #include <QWidget>
 #include <QVector>
+#include <QPropertyAnimation>
 
 namespace Ui {
 class Widget;
@@ -20,20 +23,27 @@ public:
     // Fps
     static const int fps = 60;
 
-    // BaseDir
-    QString baseDir;
+    // Camera coords
+    QPointF cam;
 
     // Player
     Car *player;
+
+    // Screen coords
+    float screenX, screenY;
 
     // Images
     QImage backgroundTexture;
 
     // Collision Masks
-    QVector< QVector<QLine> > cMasks;
+    QVector< CMask* > cMasks;
 
     // Timer Update
     int timerUpdateId;
+
+    int timerFps, debugFps;
+
+    int timerFpsId;
 
     // Key Bools
     bool keyRightPressed;
@@ -46,7 +56,7 @@ public slots:
 
 private slots:
     void paintEvent(QPaintEvent *);
-    void drawTexture(QPainter &p, QImage texture, int startX = 0, int startY = 0);
+    void drawTexture(QPainter &p, QImage texture, QRectF rect);
     void keyPressEvent(QKeyEvent *);
     void keyReleaseEvent(QKeyEvent *event);
     void timerEvent(QTimerEvent *);
@@ -54,6 +64,7 @@ private slots:
     void loadAll();
     void createAll();
     void addAll();
+    void addFigure(CMask *cMask);
 
 private:
     Ui::Widget *ui;

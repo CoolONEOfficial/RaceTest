@@ -38,13 +38,6 @@ Car::Car(QWidget *parent) : QWidget(parent)
     x = 100;
     y = 100;
 
-//    std::ofstream file( "C:\\User\\Trukhin\\data.dat" );
-//    int value = 255;
-
-//    file.write( (char*)(&value), 4 );
-
-//    file.close();
-
     // Start Move Timer
     timerMoveId = startTimer(15);
     timerRotateId = startTimer(100);
@@ -87,9 +80,10 @@ void Car::drawWheels(QPainter &p, float carAngle)
     // Draw Wheels
 
     // Rotate
-    p.resetTransform();
-    p.translate(x, y);
-    p.rotate(carAngle);
+    if(w != 0)
+    {
+        p.translate(x, y);
+        p.rotate(carAngle);
 
         // Manual
         for(int f = 0; f<wheelsManual.size(); f++)
@@ -103,36 +97,40 @@ void Car::drawWheels(QPainter &p, float carAngle)
             wheelsStatic[f]->draw(p, wheelsCarAngle, false);
         }
 
-    // UnRotate
-    p.rotate(carAngle);
-    p.translate(-x, -y);
-    p.resetTransform();
+        // UnRotate
+        p.rotate(-carAngle);
+        p.translate(-(x), -(y));
+    }
 }
 
 void Car::drawCar(QPainter &p, float carAngle)
 {
     // Rotate
-    p.resetTransform();
-    p.translate(x, y);
-    p.rotate(carAngle);
+    if(w != 0)
+    {
+        p.translate(x, y);
+        p.rotate(carAngle);
 
-        // Random
-        int random = 0;
-        if(!keyUp && !keyDown)
-            random = (rand()%2)-1;
+            // Random
+            int random = 0;
+            if(!keyUp && !keyDown)
+                random = (rand()%3)-1;
 
-        // Draw
-        p.drawImage(QRect(-(carWidth()/2 + random), -(carHeight()/2 + random),
-                          carWidth(), carHeight()), image);
+            // Draw
+            p.drawImage(QRect(-(carWidth()/2 + random), -(carHeight()/2 + random),
+                              carWidth(), carHeight()), image);
 
-    // UnRotate
-    p.rotate(-carAngle);
-    p.translate(-x, -y);
-    p.resetTransform();
+        // UnRotate
+        p.rotate(-carAngle);
+        p.translate(-(x), -(y));
+    }
 }
 
 void Car::move()
 {
+    // FPS
+    w->timerFps++;
+
     // Keys
     keysEvent();
 
@@ -143,21 +141,30 @@ void Car::move()
     x += vX;
     y += vY;
 
-    int sx = 1280;
-    int sy = 1024;
-
     if( w != 0 )
     {
-        sx = w->width();
-        sy = w->height();
-    }
+        for(int f = 0; f<w->cMasks.size(); f++)
+        {
+            QPointF touchPoint;
+            if( touchCMask(w->cMasks[f], touchPoint) )
+            {
+                // Back
+                x -= vX;
+                y -= vY;
+                speed *= -0.5;
 
-    // if player lost then teleport Player
-    correctVal(-biggestSide(), sx+biggestSide(), x);
-    correctVal(-biggestSide(), sy+biggestSide(), y);
+                // Drift
+                addTrackBranches();
+            }
+        }
+    }
 
     // Rotate car
     rotate(speedScale() * whellsAngle);
+
+    // Drift
+    if(keyDown)
+        rotate(speedScale()/2 * whellsAngle);
 
     // Move whellsAngle to 0
     whellsAngle *= 0.95;
@@ -172,66 +179,88 @@ void Car::move()
     if(speed < 1e-3 &&
        speed > -1e-3)
         speed = 0;
+
+    // Move Camera
+    if(w != 0)
+    {
+        w->screenX = w->width() / 2;
+
+        if(speed>0)
+        {
+            w->screenY = w->height() / 4 * 3;
+        }
+        else
+        {
+            w->screenY = w->height() / 4;
+        }
+
+        w->cam.setX(x - w->screenX);
+        w->cam.setY(y - w->screenY);
+    }
 }
 
 void Car::keyRightEvent()
 {
     // Rotate Wheels Right
+    float rotate = M_PI / 400;
+
     if(speed>0)
-        rotateWheels(M_PI / 400);
+        rotateWheels(rotate);
     else
-        rotateWheels(-(M_PI / 400));
+        rotateWheels(-rotate);
 }
 
 void Car::keyLeftEvent()
 {
     // Rotate Wheels Left
+    float rotate = M_PI / 400;
+
     if(speed>0)
-        rotateWheels(-(M_PI / 400));
+        rotateWheels(-rotate);
     else
-        rotateWheels(M_PI / 400);
+        rotateWheels(rotate);
 }
 
 void Car::keyUpEvent()
 {
     // Up Boost
+
+    // Limit
     if(speed < speedForwardMax)
+    {
+        if(speed < 0)
+        {
+            // Add tracks
+            addTracks();
+        }
+
         speed += boostForward*speedScale()+0.01;
+    }
 }
 
 void Car::keyDownEvent()
 {
-    // Limit
-    if(speed > -fabs(speedBackMax))
+    // Down boost
+    if(!keyUp)
     {
-        // Drift
-        if(speed > 0)
+        // Limit
+        if(speed > -fabs(speedBackMax))
         {
-            // Add Tracks
-
-            // Manual
-            for(int f = 0; f<wheelsManual.size(); f++)
+            // Drift
+            if(speed > 0)
             {
-                wheelsManual[f]->addTrack( toGlobalCoords( QPointF(wheelsManual[f]->x, wheelsManual[f]->y) ) );
+                // Add Tracks
+                addTracks();
             }
 
-            // Static
-            for(int f = 0; f<wheelsStatic.size(); f++)
-            {
-                wheelsStatic[f]->addTrack( toGlobalCoords( QPointF(wheelsStatic[f]->x, wheelsStatic[f]->y) ) );
-            }
+            // Back Boost
+            speed -= boostBack*speedScale()+0.01;
         }
-
-        // Back Boost
-        speed -= boostBack*speedScale()+0.01;
     }
 }
 
 void Car::rotate(float rotateAngle)
 {
-    // Correct
-    correctAngle(rotateAngle);
-
     // Rotate
     angle += rotateAngle;
 
@@ -242,11 +271,7 @@ void Car::rotate(float rotateAngle)
 void Car::rotateWheels(float rotateAngle)
 {
     // Correct
-    correctAngle(rotateAngle);
-
-//    if((rotateAngle > 0 && whellsAngle < 0) ||
-//       (rotateAngle < 0 && whellsAngle > 0))
-//        whellsAngle = 0;
+//    correctAngle(rotateAngle);
 
     // Rotate
     whellsAngle += rotateAngle;
@@ -255,7 +280,7 @@ void Car::rotateWheels(float rotateAngle)
     correctAngle(whellsAngle);
 
     // Limit
-    float limitWheelsAngle = M_PI / 4 / 15;
+    float limitWheelsAngle = M_PI / 4.0 / 15.0;
 
     float limitScale = 0.6;
 
@@ -266,6 +291,8 @@ void Car::rotateWheels(float rotateAngle)
 
 void Car::setAngle(float newAngle)
 {
+    Q_ASSERT("function doesn't work!" && 0);
+
     // Correct
     correctAngle(newAngle);
 
@@ -348,7 +375,7 @@ void Car::keysEvent()
 
 void Car::loadImage(QString name)
 {
-    image.load(QApplication::applicationDirPath()+"\\images\\"+name);
+    image.load(name);
 }
 
 void Car::timerEvent(QTimerEvent *event)
@@ -397,6 +424,40 @@ bool Car::touchLine(QLineF line, QPointF &pointTouch)
     }
 
     return false;
+}
+
+bool Car::touchPoly(QPolygonF poly, QPointF &touchPoint)
+{
+    // Touch polygon
+
+    int touch = false;
+
+    if(w != 0)
+    {
+        for(int f = 0; f<poly.size()-1; f++)
+        {
+            // Set Touch if true
+            if(touchLine( QLineF( poly[f].x(), poly[f].y(),
+                       poly[f+1].x(), poly[f+1].y() ), touchPoint ))
+                touch = true;
+        }
+    }
+
+    return touch;
+}
+
+bool Car::touchCMask(CMask *cMask, QPointF &touchPoint)
+{
+    // Touch CMask
+    QPolygon gPoly;
+
+    for(int f = 0; f<cMask->poly.size(); f++)
+    {
+        gPoly.push_back(QPoint(cMask->poly[f].x() + cMask->x,
+                               cMask->poly[f].y() + cMask->y));
+    }
+
+    return touchPoly(gPoly, touchPoint);
 }
 
 void Car::setWidget(Widget *widget)
@@ -449,19 +510,19 @@ int Car::biggestSide()
 
 void Car::addWheelManual(Wheel *wheelManual)
 {
-    // Add Manual Wheel
+    // Add Manual Wheels
     wheelsManual.push_back(wheelManual);
-    wheelsManual.push_back(new Wheel(this, wheelManual->x, -wheelManual->y, 20, 10));
+    wheelsManual.push_back(new Wheel(wheelManual->getWidget(), wheelManual->x, -wheelManual->y, 20, 10));
 }
 
 void Car::addWheelStatic(Wheel *wheelStatic)
 {
-    // Add Static Wheel
+    // Add Static Wheels
     wheelsStatic.push_back(wheelStatic);
-    wheelsStatic.push_back(new Wheel(this, wheelStatic->x, -wheelStatic->y, 20, 10));
+    wheelsStatic.push_back(new Wheel(wheelStatic->getWidget(), wheelStatic->x, -wheelStatic->y, 20, 10));
 }
 
-void Car::startDrift()
+void Car::addTrackBranches()
 {
     // Add Branches
 
@@ -475,5 +536,22 @@ void Car::startDrift()
     for(int f = 0; f<wheelsManual.size(); f++)
     {
         wheelsManual[f]->addTrackBranch();
+    }
+}
+
+void Car::addTracks()
+{
+    // Add Tracks
+
+    // Manual
+    for(int f = 0; f<wheelsManual.size(); f++)
+    {
+        wheelsManual[f]->addTrack( toGlobalCoords( QPointF(wheelsManual[f]->x*2, wheelsManual[f]->y*2) ) );
+    }
+
+    // Static
+    for(int f = 0; f<wheelsStatic.size(); f++)
+    {
+        wheelsStatic[f]->addTrack( toGlobalCoords( QPointF(wheelsStatic[f]->x*2, wheelsStatic[f]->y*2) ) );
     }
 }

@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file alias="car">images/sprites/car/main/car.png</file>
+        <file alias="texture">images/textures/background/texture.jpg</file>
+    </qresource>
+</RCC>

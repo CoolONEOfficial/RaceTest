@@ -40,6 +40,11 @@ void Wheel::setWidget(Widget *widget)
     w = widget;
 }
 
+Widget *Wheel::getWidget()
+{
+    return w;
+}
+
 void Wheel::addTrack(QPointF wTrack)
 {
     // Add track
@@ -96,10 +101,31 @@ void Wheel::drawTracks(QPainter &p)
     QPen pen;
     pen.setWidth(5);
     p.setPen(pen);
-    for(int f = 0; f<tracks.size(); f++)
+    for(int f1 = 0; f1<tracks.size(); f1++)
     {
-        if(!tracks[f].empty())
-            p.drawPolyline(&tracks[f][0], tracks[f].size());
+        if(!tracks[f1].empty())
+        {
+            for(int f2 = 0; f2<tracks[f1].size()-1; f2++)
+            {
+                // Set pen width
+                QPen pen;
+                pen.setWidth(height);
+                p.setPen(pen);
+
+                // Set opasity
+                p.setOpacity(0.2);
+
+                if(w != 0)
+                {
+                    // Draw Line
+                    p.drawLine(tracks[f1][f2].x(), tracks[f1][f2].y(),
+                               tracks[f1][f2+1].x(), tracks[f1][f2+1].y());
+                }
+
+                // Reset opasity
+                p.setOpacity(1);
+            }
+        }
     }
     p.setPen(oldPen);
 }

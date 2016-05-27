@@ -34,6 +34,7 @@ signals:
 public slots:
     void setParams(float wX, float wY, float wW, float wH);
     void setWidget(Widget *widget);
+    Widget *getWidget();
     void addTrack(QPointF wTrack);
     void addTrack(int x, int y);
     void addTrackBranch();

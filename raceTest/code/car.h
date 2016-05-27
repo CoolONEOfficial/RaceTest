@@ -2,6 +2,7 @@
 #define CAR_H
 
 #include "wheel.h"
+#include "cmask.h"
 #include <QWidget>
 #include <QTimer>
 #include <QVector>
@@ -57,6 +58,8 @@ public:
 
     // Touch line to car
     bool touchLine(QLineF line, QPointF &touchPoint);
+    bool touchPoly(QPolygonF poly, QPointF &touchPoint);
+    bool touchCMask(CMask *cMask, QPointF &touchPoint);
 
 signals:
 
@@ -83,7 +86,8 @@ public slots:
     void timerEvent(QTimerEvent *);
     void addWheelStatic(Wheel *wheelStatic);
     void addWheelManual(Wheel *wheelManual);
-    void startDrift();
+    void addTrackBranches();
+    void addTracks();
 };
 
 #endif // CAR_H
