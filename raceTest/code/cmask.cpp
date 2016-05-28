@@ -3,6 +3,9 @@
 
 CMask::CMask(QObject *parent)
 {
+    // Set Solid
+    solid = true;
+
     // Set Polygon
     poly = QPolygonF( QRectF( -10, -10, 20, 20 ) );
 
@@ -11,8 +14,11 @@ CMask::CMask(QObject *parent)
     y = 0;
 }
 
-CMask::CMask(QObject *parent, int cX, int cY, QPolygonF cPoly, QImage cTexture)
+CMask::CMask(QObject *parent, bool cSolid, float cX, float cY, QPolygonF cPoly, QImage cTexture)
 {
+    // Set Solid
+    solid = cSolid;
+
     // Set Polygon
     poly = cPoly;
 
@@ -24,8 +30,11 @@ CMask::CMask(QObject *parent, int cX, int cY, QPolygonF cPoly, QImage cTexture)
     y = cY;
 }
 
-CMask::CMask(QObject *parent, int cX, int cY, QRectF cRect, QImage cTexture) : QObject(parent)
+CMask::CMask(QObject *parent, bool cSolid, float cX, float cY, QRectF cRect, QImage cTexture) : QObject(parent)
 {
+    // Set Solid
+    solid = cSolid;
+
     // Set Polygon
     poly = QPolygonF( cRect );
 
@@ -44,6 +53,29 @@ void CMask::draw(QPainter &p)
 
     // Draw poly
     p.drawPolygon(poly);
+
+    // Brush
+    QBrush brush;
+    brush.setTextureImage(texture);
+
+    // Fill polygon
+    QPainterPath path;
+    path.addPolygon(poly);
+
+    // Pen solid
+    QPen pen = p.pen(), oldPen = p.pen();
+    pen.setWidth(6);
+
+    if(solid)
+        p.setPen(pen);
+
+    // Draw polygon
+    p.drawPolygon(poly);
+
+    p.setPen(oldPen);
+
+    // Fill polygon
+    p.fillPath(path, brush);
 
     // Untranslate
     p.translate(-(x), -(y));

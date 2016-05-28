@@ -61,6 +61,9 @@ public:
     bool touchPoly(QPolygonF poly, QPointF &touchPoint);
     bool touchCMask(CMask *cMask, QPointF &touchPoint);
 
+    // Drift
+    bool drift();
+
 signals:
 
 public slots:

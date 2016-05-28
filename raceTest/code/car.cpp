@@ -138,8 +138,17 @@ void Car::move()
     float vX = speed * cos(angle);
     float vY = speed * sin(angle);
 
+    float oldX = x, oldY = y, oldAngle = angle;
+
     x += vX;
     y += vY;
+
+    // Rotate car
+    rotate(speedScale() * whellsAngle);
+
+    // Drift
+    if(keyDown)
+        rotate(speedScale()/2 * whellsAngle);
 
     if( w != 0 )
     {
@@ -149,22 +158,65 @@ void Car::move()
             if( touchCMask(w->cMasks[f], touchPoint) )
             {
                 // Back
-                x -= vX;
-                y -= vY;
+                x = oldX;
+                y = oldY;
+                angle = oldAngle;
+
                 speed *= -0.5;
 
                 // Drift
                 addTrackBranches();
             }
         }
+
+        if(!keyUp && !keyDown)
+        {
+            // Center
+            w->screenCar.setEndY(w->height()/2);
+            w->screenCar.start(true, false);
+        }
+        else if(keyUp)
+        {
+            // Car down
+            w->screenCar.setEndY(w->height()/4*3);
+            w->screenCar.start(true, false);
+        }
+        else if(speed < 0 && !keyUp)
+        {
+            // Car up
+            w->screenCar.setEndY(w->height()/4);
+            w->screenCar.start(true, false);
+        }
+
+        if(!keyLeft && !keyRight)
+        {
+            // Center
+            w->screenCar.setEndX(w->width()/2);
+            w->screenCar.start(true, false);
+        }
+        else if(keyLeft)
+        {
+            // Car right
+            if(!drift())
+            {
+                w->screenCar.setDuration(1000);
+            }
+            w->screenCar.setEndX(w->width()/4*3);
+            w->screenCar.start(true, false);
+            w->screenCar.setDuration( w->screenCar.dDuration );
+        }
+        else if(keyRight)
+        {
+            // Car left
+            if(!drift())
+            {
+                w->screenCar.setDuration(1000);
+            }
+            w->screenCar.setEndX(w->width()/4);
+            w->screenCar.start(true, false);
+            w->screenCar.setDuration( w->screenCar.dDuration );
+        }
     }
-
-    // Rotate car
-    rotate(speedScale() * whellsAngle);
-
-    // Drift
-    if(keyDown)
-        rotate(speedScale()/2 * whellsAngle);
 
     // Move whellsAngle to 0
     whellsAngle *= 0.95;
@@ -183,26 +235,15 @@ void Car::move()
     // Move Camera
     if(w != 0)
     {
-        w->screenX = w->width() / 2;
-
-        if(speed>0)
-        {
-            w->screenY = w->height() / 4 * 3;
-        }
-        else
-        {
-            w->screenY = w->height() / 4;
-        }
-
-        w->cam.setX(x - w->screenX);
-        w->cam.setY(y - w->screenY);
+        w->cam.setX(x - w->screenCar.x);
+        w->cam.setY(y - w->screenCar.y);
     }
 }
 
 void Car::keyRightEvent()
 {
     // Rotate Wheels Right
-    float rotate = M_PI / 400;
+    float rotate = M_PI / 600;
 
     if(speed>0)
         rotateWheels(rotate);
@@ -213,7 +254,7 @@ void Car::keyRightEvent()
 void Car::keyLeftEvent()
 {
     // Rotate Wheels Left
-    float rotate = M_PI / 400;
+    float rotate = M_PI / 600;
 
     if(speed>0)
         rotateWheels(-rotate);
@@ -246,6 +287,7 @@ void Car::keyDownEvent()
         // Limit
         if(speed > -fabs(speedBackMax))
         {
+
             // Drift
             if(speed > 0)
             {
@@ -361,7 +403,7 @@ void Car::keysEvent()
         keyUpEvent();
 
     // Down
-    if(keyDown)
+    else if(keyDown)
         keyDownEvent();
 
     // Left
@@ -369,7 +411,7 @@ void Car::keysEvent()
         keyLeftEvent();
 
     // Right
-    if(keyRight)
+    else if(keyRight)
         keyRightEvent();
 }
 
@@ -451,6 +493,9 @@ bool Car::touchCMask(CMask *cMask, QPointF &touchPoint)
     // Touch CMask
     QPolygon gPoly;
 
+    if(!cMask->solid)
+        return false;
+
     for(int f = 0; f<cMask->poly.size(); f++)
     {
         gPoly.push_back(QPoint(cMask->poly[f].x() + cMask->x,
@@ -458,6 +503,14 @@ bool Car::touchCMask(CMask *cMask, QPointF &touchPoint)
     }
 
     return touchPoly(gPoly, touchPoint);
+}
+
+bool Car::drift()
+{
+    if(speed > 0 && keyDown)
+        return true;
+    else
+        return false;
 }
 
 void Car::setWidget(Widget *widget)

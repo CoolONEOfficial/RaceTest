@@ -16,6 +16,7 @@ public:
 
     int x,y;
     int dX,dY,endX,endY;
+    int dDuration;
 
     void setXAnimation(int newVal);
     int getXAnimation();

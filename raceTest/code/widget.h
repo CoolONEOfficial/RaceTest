@@ -30,7 +30,7 @@ public:
     Car *player;
 
     // Screen coords
-    float screenX, screenY;
+    AnimationCoords screenCar;
 
     // Images
     QImage backgroundTexture;
@@ -50,6 +50,10 @@ public:
     bool keyLeftPressed;
     bool keyUpPressed;
     bool keyDownPressed;
+//    #ifdef __ANDROID_API__
+    bool clicked;
+    QPoint click, move, release;
+//    #endif
 
 public slots:
     void loadImage(QImage &image, const QString &imageName );
@@ -65,6 +69,12 @@ private slots:
     void createAll();
     void addAll();
     void addFigure(CMask *cMask);
+    void syncKeyVals();
+//#ifdef __ANDROID_API__
+    void mousePressEvent(QMouseEvent *);
+    void mouseReleaseEvent(QMouseEvent *);
+    void mouseMoveEvent(QMouseEvent *);
+//#endif
 
 private:
     Ui::Widget *ui;

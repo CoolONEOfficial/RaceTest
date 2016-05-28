@@ -119,6 +119,8 @@ void AnimationCoords::setDuration(int duration)
 {
     animationX->setDuration(duration);
     animationY->setDuration(duration);
+
+    dDuration = duration;
 }
 
 void AnimationCoords::setEasingCurve(QEasingCurve easingCurve)

@@ -4,6 +4,7 @@
 #include <QKeyEvent>
 #include <math.h>
 #include <QMessageBox>
+#include <QMouseEvent>
 
 Widget::Widget(QWidget *parent) :
     QWidget(parent),
@@ -44,6 +45,19 @@ void Widget::setValues()
     keyRightPressed = false;
     keyUpPressed = false;
     keyDownPressed = false;
+
+    // Android auto press
+    #ifdef __ANDROID_API__
+        keyUpPressed = true;
+    #endif
+
+    // Sync
+    syncKeyVals();
+
+    // Android values
+    #ifdef __ANDROID_API__
+        clicked = false;
+    #endif
 }
 
 void Widget::loadAll()
@@ -67,18 +81,32 @@ void Widget::addAll()
 {
     // Wheels
     player->addWheelManual(new Wheel(this, player->width()/3, player->height()/2, 20, 10));
-
     player->addWheelStatic(new Wheel(this, -player->width()/3, player->height()/2, 20, 10));
 
-    CMask *mask = new CMask(this, 200,200, QRect(-10,-10,20,20), backgroundTexture);
+    addFigure(new CMask(this, true, 0, 0, QRectF(-width()*2, -width()*2, width()*4, width()*4), backgroundTexture));
+    addFigure(new CMask(this, true, 275, 0, QRect(-width()*2,-width()*2, 10, width()*3.5), backgroundTexture));
+    addFigure(new CMask(this, true, 275+600, 0, QRect(-width()*2,-width()*2+310, 10, width()*3.5), backgroundTexture));
+    addFigure(new CMask(this, true, 275+(600*2), 0, QRect(-width()*2,-width()*2, 10, width()*3.5), backgroundTexture));
+    addFigure(new CMask(this, true, 275+(600*3), 0, QRect(-width()*2,-width()*2+310, 10, width()*3.5), backgroundTexture));
 
-    addFigure(mask);
+    screenCar.create();
+    screenCar.setDuration(300);
+    screenCar.setX(width()/2);
+    screenCar.setY(height()/2);
 }
 
 void Widget::addFigure(CMask *cMask)
 {
     // Add figure cMask
     cMasks.push_back(cMask);
+}
+
+void Widget::syncKeyVals()
+{
+    player->keyUp = keyUpPressed;
+    player->keyDown = keyDownPressed;
+    player->keyLeft = keyLeftPressed;
+    player->keyRight = keyRightPressed;
 }
 
 void Widget::
@@ -95,9 +123,6 @@ paintEvent(QPaintEvent *)
     p.translate(player->x, player->y);
     p.rotate(-player->angle / M_PI * 180.0 - 90);
     p.translate(-player->x, -player->y);
-
-    // Draw Background Texture
-    drawTexture(p, backgroundTexture, QRectF(-width()*2, -height()*2, width()*4, height()*4));
 
     // Draw collision masks
     for(int f = 0; f<cMasks.size(); f++)
@@ -124,16 +149,20 @@ paintEvent(QPaintEvent *)
     p.setBrush(brush);
     p.drawRect(0,0, width(), 150);
 
+#ifndef __ANDROID_API__
+
     // Draw Debug Texts
     p.drawText(5, 15*1, "x: "+QString::number(player->x));
     p.drawText(5, 15*2, "y: "+QString::number(player->y));
     p.drawText(5, 15*3, "camX: "+QString::number(cam.x()));
     p.drawText(5, 15*4, "camY: "+QString::number(cam.y()));
-    p.drawText(5, 15*5, "Speed: "+QString::number(player->speed));
-    p.drawText(5, 15*6, "Angle: "+QString::number(player->angle));
-    p.drawText(5, 15*7, "WheelsAngle: "+QString::number(player->whellsAngle));
-    p.drawText(5, 15*8, "SpeedScale: "+QString::number(player->speedScale()));
-    p.drawText(5, 15*9, "Fps: "+QString::number(debugFps));
+    p.drawText(5, 15*5, "scrX: "+QString::number(screenCar.x));
+    p.drawText(5, 15*6, "scrY: "+QString::number(screenCar.y));
+    p.drawText(5, 15*7, "Speed: "+QString::number(player->speed));
+    p.drawText(5, 15*8, "Angle: "+QString::number(player->angle));
+    p.drawText(5, 15*9, "WheelsAngle: "+QString::number(player->whellsAngle));
+    p.drawText(5, 15*10, "SpeedScale: "+QString::number(player->speedScale()));
+    p.drawText(5, 15*11, "Fps: "+QString::number(debugFps));
 
     // Keys debug
     if(keyUpPressed)
@@ -184,49 +213,69 @@ paintEvent(QPaintEvent *)
             p.drawText(f*100+500, 15*(4+f2), "size: "+QString::number(player->wheelsStatic[f]->tracks[f2].size()));
         }
     }
+
+#else
+    if(keyDownPressed)
+    {
+        p.drawRect(width()/3, height()/2, width()/3, height()/2);
+    }
+
+    if(keyLeftPressed)
+    {
+        p.drawRect(0, height()/2, width()/3, height()/2);
+    }
+
+    if(keyRightPressed)
+    {
+        p.drawRect(width()/3*2, height()/2, width()/3, height()/2);
+    }
+#endif
 }
 
 void Widget::keyPressEvent(QKeyEvent *event)
 {
-    // W / Up / Gas
-    if(event->key() == Qt::Key_W ||
-       event->key() == Qt::Key_Up)
+    if(!event->isAutoRepeat())
     {
-        keyUpPressed = true;
-        player->keyUp = true;
-    }
+        #ifndef __ANDROID_API__
+        // W / Up / Gas
+        if(event->key() == Qt::Key_W ||
+           event->key() == Qt::Key_Up)
+        {
+                keyUpPressed = true;
+        }
+        #endif
 
-    // S / Down / Brake
-    else if(event->key() == Qt::Key_S ||
-            event->key() == Qt::Key_Down)
-    {
-        keyDownPressed = true;
-        player->keyDown = true;
-    }
+        // S / Down / Brake
+        if(event->key() == Qt::Key_S ||
+                event->key() == Qt::Key_Down)
+        {
+            keyDownPressed = true;
+        }
 
-    // A / Left
-    if(event->key() == Qt::Key_A ||
-       event->key() == Qt::Key_Left)
-    {
-        keyLeftPressed = true;
-        player->keyLeft = true;
-    }
+        // A / Left
+        if(event->key() == Qt::Key_A ||
+           event->key() == Qt::Key_Left)
+        {
+            keyLeftPressed = true;
+        }
 
-    // D / Right
-    else if(event->key() == Qt::Key_D ||
-            event->key() == Qt::Key_Right)
-    {
-        keyRightPressed = true;
-        player->keyRight = true;
-    }
+        // D / Right
+        if(event->key() == Qt::Key_D ||
+                event->key() == Qt::Key_Right)
+        {
+            keyRightPressed = true;
+        }
 
-    // R / Restart
-    if(event->key() == Qt::Key_R)
-    {
-        player->x = width()/2;
-        player->y = height()/2;
-        player->speed = 0;
-        player->angle = 0;
+        syncKeyVals();
+
+        // R / Restart
+        if(event->key() == Qt::Key_R)
+        {
+            player->x = width()/2;
+            player->y = height()/2;
+            player->speed = 0;
+            player->angle = 0;
+        }
     }
 }
 
@@ -234,21 +283,21 @@ void Widget::keyReleaseEvent(QKeyEvent *event)
 {
     if(!event->isAutoRepeat())
     {
+        #ifndef __ANDROID_API__
         // W / Up / Gas
         if(event->key() == Qt::Key_W ||
            event->key() == Qt::Key_Up)
         {
             keyUpPressed = false;
-            player->keyUp = false;
             player->addTrackBranches();
         }
+        #endif
 
         // S / Down / Brake
-        else if(event->key() == Qt::Key_S ||
+        if(event->key() == Qt::Key_S ||
                 event->key() == Qt::Key_Down)
         {
             keyDownPressed = false;
-            player->keyDown = false;
             player->addTrackBranches();
         }
 
@@ -257,16 +306,17 @@ void Widget::keyReleaseEvent(QKeyEvent *event)
            event->key() == Qt::Key_Left)
         {
             keyLeftPressed = false;
-            player->keyLeft = false;
         }
 
         // D / Right
-        else if(event->key() == Qt::Key_D ||
+        if(event->key() == Qt::Key_D ||
                 event->key() == Qt::Key_Right)
         {
             keyRightPressed = false;
-            player->keyRight = false;
         }
+
+        // Sync
+        syncKeyVals();
     }
 }
 
@@ -326,3 +376,60 @@ void Widget::drawTexture(QPainter &p, QImage texture, QRectF rect)
     // Reset brush/Pen
     p.setBrush(oldBrush);
 }
+
+//#ifdef __ANDROID_API__
+
+void Widget::mousePressEvent(QMouseEvent *event)
+{
+    click.setX(event->x());
+    click.setY(event->y());
+}
+
+void Widget::mouseMoveEvent(QMouseEvent *event)
+{
+    move.setX(event->x());
+    move.setY(event->y());
+
+    if(event->y() > height()/2)
+    {
+        if(event->x() < width() / 3)
+        {
+            keyLeftPressed = true;
+        }
+        else if(event->x() > width() / 3*2)
+        {
+            keyRightPressed = true;
+        }
+        else if(event->x() > width() / 3 && event->x() < width() / 3*2)
+        {
+            keyDownPressed = true;
+        }
+    }
+
+    // Sync
+    syncKeyVals();
+}
+
+void Widget::mouseReleaseEvent(QMouseEvent *event)
+{
+    release.setX(event->x());
+    release.setY(event->y());
+
+    if(event->x() < width() / 3)
+    {
+        keyLeftPressed = false;
+    }
+    else if(event->x() > width() / 3*2)
+    {
+        keyRightPressed = false;
+    }
+    else
+    {
+        keyDownPressed = false;
+    }
+
+    // Sync
+    syncKeyVals();
+}
+
+//#endif
