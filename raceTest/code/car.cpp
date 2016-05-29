@@ -242,6 +242,8 @@ void Car::move()
 
 void Car::keyRightEvent()
 {
+    // Key Right
+
     // Rotate Wheels Right
     float rotate = M_PI / 600;
 
@@ -253,6 +255,8 @@ void Car::keyRightEvent()
 
 void Car::keyLeftEvent()
 {
+    // Key Left
+
     // Rotate Wheels Left
     float rotate = M_PI / 600;
 
@@ -264,6 +268,8 @@ void Car::keyLeftEvent()
 
 void Car::keyUpEvent()
 {
+    // Key Up
+
     // Up Boost
 
     // Limit
@@ -281,23 +287,23 @@ void Car::keyUpEvent()
 
 void Car::keyDownEvent()
 {
+    // Key Down
+
     // Down boost
-    if(!keyUp)
+
+    // Limit
+    if(speed > -fabs(speedBackMax))
     {
-        // Limit
-        if(speed > -fabs(speedBackMax))
+
+        // Drift
+        if(speed > 0)
         {
-
-            // Drift
-            if(speed > 0)
-            {
-                // Add Tracks
-                addTracks();
-            }
-
-            // Back Boost
-            speed -= boostBack*speedScale()+0.01;
+            // Add Tracks
+            addTracks();
         }
+
+        // Back Boost
+        speed -= boostBack*speedScale()+0.01;
     }
 }
 
@@ -398,26 +404,30 @@ void Car::keysEvent()
 {
     // Keys
 
-    // Up
-    if(keyUp)
-        keyUpEvent();
-
     // Down
-    else if(keyDown)
+    if(keyDown)
         keyDownEvent();
+
+    // Up
+    if(keyUp && !keyDown)
+        keyUpEvent();
 
     // Left
     if(keyLeft)
         keyLeftEvent();
 
     // Right
-    else if(keyRight)
+    if(keyRight)
         keyRightEvent();
 }
 
 void Car::loadImage(QString name)
 {
-    image.load(name);
+    // Load image
+    if(w != 0)
+    {
+        w->loadImage(image, name);
+    }
 }
 
 void Car::timerEvent(QTimerEvent *event)

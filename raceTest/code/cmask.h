@@ -22,6 +22,8 @@ signals:
 
 public slots:
     void draw(QPainter &p);
+    void setRect(QRectF cRect);
+    void setCoords(QPointF cCoords);
 };
 
 #endif // CMASK_H

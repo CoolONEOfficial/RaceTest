@@ -50,10 +50,10 @@ public:
     bool keyLeftPressed;
     bool keyUpPressed;
     bool keyDownPressed;
-//    #ifdef __ANDROID_API__
+    #ifdef __ANDROID_API__
     bool clicked;
     QPoint click, move, release;
-//    #endif
+    #endif
 
 public slots:
     void loadImage(QImage &image, const QString &imageName );
@@ -66,15 +66,16 @@ private slots:
     void timerEvent(QTimerEvent *);
     void setValues();
     void loadAll();
+    void loadMaps();
     void createAll();
     void addAll();
     void addFigure(CMask *cMask);
     void syncKeyVals();
-//#ifdef __ANDROID_API__
+#ifdef __ANDROID_API__
     void mousePressEvent(QMouseEvent *);
     void mouseReleaseEvent(QMouseEvent *);
     void mouseMoveEvent(QMouseEvent *);
-//#endif
+#endif
 
 private:
     Ui::Widget *ui;

@@ -5,6 +5,7 @@
 #include <math.h>
 #include <QMessageBox>
 #include <QMouseEvent>
+#include <QTextStream>
 
 Widget::Widget(QWidget *parent) :
     QWidget(parent),
@@ -62,11 +63,106 @@ void Widget::setValues()
 
 void Widget::loadAll()
 {
+    loadMaps();
+
     // Car Image
     player->loadImage(":/car");
 
     // Background Texture
     loadImage(backgroundTexture, ":/texture");
+}
+
+void Widget::loadMaps()
+{
+    // Load maps
+    QString path = QApplication::applicationDirPath()+"/maps.txt";
+
+    QFile fMaps(path);
+
+    if( !fMaps.open(QIODevice::ReadOnly) )
+    {
+//        QMessageBox::information(this, "Error load maps", path);
+    }
+    else
+    {
+        QTextStream sMaps(&fMaps);
+
+        // Load vals
+        bool loadCMask = false;
+        CMask *addCMask;
+
+        do
+        {
+            // Read command
+            QString command;
+            sMaps>>command;
+
+            if(command == "cmask")
+            {
+                loadCMask = true;
+
+                // Create cmask
+                addCMask = new CMask(this, true, 0, 0, QPolygonF(), backgroundTexture);
+            }
+
+            else if(command == "/cmask")
+            {
+                loadCMask = false;
+
+                // Add cmask
+                addFigure(addCMask);
+            }
+
+            else if(loadCMask)
+            {
+                // Solid
+                if(command == "solid")
+                {
+                    // Read solidId
+                    int solidId;
+                    sMaps>>solidId;
+
+                    // Set solid
+                    if(solidId == 0)
+                        addCMask->solid = false;
+                    else
+                        addCMask->solid = true;
+                }
+
+                // Rect
+                else if(command == "rect")
+                {
+                    // Read rect
+                    int x,y,w,h;
+
+                    // Load rect
+                    sMaps>>x;
+                    sMaps>>y;
+                    sMaps>>w;
+                    sMaps>>h;
+
+                    // Set rect
+                    addCMask->setRect(QRectF(x, y, w, h));
+                }
+
+                // Coords
+                else if(command == "coords")
+                {
+                    // Read rect
+                    int x,y;
+
+                    // Load rect
+                    sMaps>>x;
+                    sMaps>>y;
+
+                    // Set rect
+                    addCMask->setCoords(QPointF(x, y));
+                }
+            }
+        }while(!sMaps.atEnd());
+    }
+
+    fMaps.close();
 }
 
 void Widget::createAll()
@@ -83,11 +179,11 @@ void Widget::addAll()
     player->addWheelManual(new Wheel(this, player->width()/3, player->height()/2, 20, 10));
     player->addWheelStatic(new Wheel(this, -player->width()/3, player->height()/2, 20, 10));
 
-    addFigure(new CMask(this, true, 0, 0, QRectF(-width()*2, -width()*2, width()*4, width()*4), backgroundTexture));
-    addFigure(new CMask(this, true, 275, 0, QRect(-width()*2,-width()*2, 10, width()*3.5), backgroundTexture));
-    addFigure(new CMask(this, true, 275+600, 0, QRect(-width()*2,-width()*2+310, 10, width()*3.5), backgroundTexture));
-    addFigure(new CMask(this, true, 275+(600*2), 0, QRect(-width()*2,-width()*2, 10, width()*3.5), backgroundTexture));
-    addFigure(new CMask(this, true, 275+(600*3), 0, QRect(-width()*2,-width()*2+310, 10, width()*3.5), backgroundTexture));
+//    addFigure(new CMask(this, true, 0, 0, QRectF(-width()*2, -width()*2, width()*4, width()*4), backgroundTexture));
+//    addFigure(new CMask(this, true, 275, 0, QRect(-width()*2,-width()*2, 10, width()*3.5), backgroundTexture));
+//    addFigure(new CMask(this, true, 275+600, 0, QRect(-width()*2,-width()*2+310, 10, width()*3.5), backgroundTexture));
+//    addFigure(new CMask(this, true, 275+(600*2), 0, QRect(-width()*2,-width()*2, 10, width()*3.5), backgroundTexture));
+//    addFigure(new CMask(this, true, 275+(600*3), 0, QRect(-width()*2,-width()*2+310, 10, width()*3.5), backgroundTexture));
 
     screenCar.create();
     screenCar.setDuration(300);
@@ -109,8 +205,7 @@ void Widget::syncKeyVals()
     player->keyRight = keyRightPressed;
 }
 
-void Widget::
-paintEvent(QPaintEvent *)
+void Widget::paintEvent(QPaintEvent *)
 {
     QPainter p(this);
 
@@ -165,7 +260,7 @@ paintEvent(QPaintEvent *)
     p.drawText(5, 15*11, "Fps: "+QString::number(debugFps));
 
     // Keys debug
-    if(keyUpPressed)
+    if(player->keyUp)
     {
         p.drawRect(width()-80, 10, 30, 30);
         p.drawLine(width()-80+15, 15, width()-80+15, 35);
@@ -173,7 +268,7 @@ paintEvent(QPaintEvent *)
         p.drawLine(width()-80+15, 15, width()-80+20, 25);
     }
 
-    if(keyDownPressed)
+    if(player->keyDown)
     {
         p.drawRect(width()-80, 50, 30, 30);
         p.drawLine(width()-80+15, 55, width()-80+15, 50+25);
@@ -181,10 +276,10 @@ paintEvent(QPaintEvent *)
         p.drawLine(width()-80+15, 50+25, width()-80+15+5, 50+25-10);
     }
 
-    if(keyRightPressed)
+    if(player->keyRight)
         p.drawRect(width()-40, 50, 30, 30);
 
-    if(keyLeftPressed)
+    if(player->keyLeft)
         p.drawRect(width()-120, 50, 30, 30);
 
     // Wheels
@@ -271,8 +366,8 @@ void Widget::keyPressEvent(QKeyEvent *event)
         // R / Restart
         if(event->key() == Qt::Key_R)
         {
-            player->x = width()/2;
-            player->y = height()/2;
+            player->x = 0;
+            player->y = 0;
             player->speed = 0;
             player->angle = 0;
         }
@@ -343,7 +438,7 @@ void Widget::loadImage(QImage &image, const QString &imageName)
 
     if( !image.load(path))
     {
-        QMessageBox::information(this,"Error load image", path);
+        QMessageBox::information(this, "Error load image", path);
     }
 }
 
@@ -377,7 +472,7 @@ void Widget::drawTexture(QPainter &p, QImage texture, QRectF rect)
     p.setBrush(oldBrush);
 }
 
-//#ifdef __ANDROID_API__
+#ifdef __ANDROID_API__
 
 void Widget::mousePressEvent(QMouseEvent *event)
 {
@@ -432,4 +527,4 @@ void Widget::mouseReleaseEvent(QMouseEvent *event)
     syncKeyVals();
 }
 
-//#endif
+#endif

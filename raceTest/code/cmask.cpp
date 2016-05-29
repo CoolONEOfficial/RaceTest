@@ -80,3 +80,16 @@ void CMask::draw(QPainter &p)
     // Untranslate
     p.translate(-(x), -(y));
 }
+
+void CMask::setRect(QRectF cRect)
+{
+    // Set Rect
+    poly = QPolygonF( cRect );
+}
+
+void CMask::setCoords(QPointF cCoords)
+{
+    // Set Coords
+    x = cCoords.x();
+    y = cCoords.y();
+}
