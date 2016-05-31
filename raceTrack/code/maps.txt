@@ -1,4 +1,0 @@
-cmask
- solid 0
- rect -20 -30 40 60
- coords 0 0

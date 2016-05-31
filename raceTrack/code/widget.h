@@ -3,6 +3,7 @@
 
 #include <car.h>
 #include <cmask.h>
+#include <button.h>
 #include <animationcoords.h>
 #include <QWidget>
 #include <QVector>
@@ -23,6 +24,15 @@ public:
     // Fps
     static const int fps = 60;
 
+    static const int dPenWidth = 3;
+
+    // States map
+    QMap<QString, int> states;
+
+    // Scenes
+    int scene;
+    QMap< QString, int > scenes;
+
     // Camera coords
     QPointF cam;
 
@@ -38,6 +48,10 @@ public:
     // Collision Masks
     QVector< CMask* > cMasks;
 
+    // Buttons
+    QVector < QVector <Button*> > buttons;
+    QMap< QString, int > buttonsId;
+
     // Timer Update
     int timerUpdateId;
 
@@ -50,13 +64,17 @@ public:
     bool keyLeftPressed;
     bool keyUpPressed;
     bool keyDownPressed;
-    #ifdef __ANDROID_API__
+
+    // Mouse vals
     bool clicked;
     QPoint click, move, release;
-    #endif
+
+    // Fonts
+    QFont magneto, grobold;
 
 public slots:
     void loadImage(QImage &image, const QString &imageName );
+    void loadFont(QFont &font, const QString &name);
 
 private slots:
     void paintEvent(QPaintEvent *);
@@ -70,12 +88,15 @@ private slots:
     void createAll();
     void addAll();
     void addFigure(CMask *cMask);
+    void addButton(Button *newButton, int sceneId);
     void syncKeyVals();
-#ifdef __ANDROID_API__
+    void drawMain(QPainter &p);
+    void drawGame(QPainter &p);
+    void drawRedactor(QPainter &p);
     void mousePressEvent(QMouseEvent *);
     void mouseReleaseEvent(QMouseEvent *);
     void mouseMoveEvent(QMouseEvent *);
-#endif
+    void buttonClicked(int id);
 
 private:
     Ui::Widget *ui;

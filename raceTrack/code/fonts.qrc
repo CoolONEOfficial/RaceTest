@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/fonts">
+        <file alias="grobold">fonts/grobold.ttf</file>
+        <file alias="magneto">fonts/magneto.ttf</file>
+    </qresource>
+</RCC>
