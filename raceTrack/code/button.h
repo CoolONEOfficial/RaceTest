@@ -16,8 +16,7 @@ class Button : public QObject
     Q_OBJECT
 public:
     explicit Button(QObject *parent = 0);
-    explicit Button(QObject *parent = 0, QColor bColor = Qt::blue, QString bText = "", int bWidth = 200, int bHeight = 100,
-                    QPointF sCoords = QPointF(0,0), QPointF eCoords = QPointF(0,0), bool bVisible = true);
+    explicit Button(QObject *parent = 0, QString bText = "",QPointF sCoords = QPointF(0,0), QPointF eCoords = QPointF(0,0), int bWidth = 300, int bHeight = 150, QColor bColor = Qt::blue, bool bVisible = true);
 
     // Widget
     Widget *widget;
@@ -40,9 +39,6 @@ public:
     // Images for states
     int width;
     int height;
-
-    // Font
-    QFont font;
 
     // States
     int state();

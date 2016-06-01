@@ -87,6 +87,11 @@ void CMask::setRect(QRectF cRect)
     poly = QPolygonF( cRect );
 }
 
+void CMask::setPoly(QPolygon cPoly)
+{
+    poly = cPoly;
+}
+
 void CMask::setCoords(QPointF cCoords)
 {
     // Set Coords

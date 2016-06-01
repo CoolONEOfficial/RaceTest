@@ -23,7 +23,8 @@ SOURCES += main.cpp\
     cmask.cpp \
     animation.cpp \
     animationcoords.cpp \
-    button.cpp
+    button.cpp \
+    gamemap.cpp
 
 HEADERS  += widget.h \
     car.h \
@@ -31,7 +32,8 @@ HEADERS  += widget.h \
     cmask.h \
     animation.h \
     animationcoords.h \
-    button.h
+    button.h \
+    gamemap.h
 
 FORMS    += widget.ui
 

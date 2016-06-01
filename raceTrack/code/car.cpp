@@ -152,20 +152,24 @@ void Car::move()
 
     if( w != 0 )
     {
-        for(int f = 0; f<w->cMasks.size(); f++)
+        // cMasks
+        if(w->gMaps.size() > 0 && w->gMap >= 0 && w->gMap<w->gMaps.size())
         {
-            QPointF touchPoint;
-            if( touchCMask(w->cMasks[f], touchPoint) )
+            for(int f = 0; f<w->gMaps[w->gMap]->cMasks.size(); f++)
             {
-                // Back
-                x = oldX;
-                y = oldY;
-                angle = oldAngle;
+                QPointF touchPoint;
+                if( touchCMask(w->gMaps[w->gMap]->cMasks[f], touchPoint) )
+                {
+                    // Back
+                    x = oldX;
+                    y = oldY;
+                    angle = oldAngle;
 
-                speed *= -0.5;
+                    speed *= -0.5;
 
-                // Drift
-                addTrackBranches();
+                    // Drift
+                    addTrackBranches();
+                }
             }
         }
 

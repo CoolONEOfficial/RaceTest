@@ -23,6 +23,7 @@ signals:
 public slots:
     void draw(QPainter &p);
     void setRect(QRectF cRect);
+    void setPoly(QPolygon cPoly);
     void setCoords(QPointF cCoords);
 };
 

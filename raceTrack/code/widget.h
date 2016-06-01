@@ -4,6 +4,7 @@
 #include <car.h>
 #include <cmask.h>
 #include <button.h>
+#include <gamemap.h>
 #include <animationcoords.h>
 #include <QWidget>
 #include <QVector>
@@ -26,12 +27,16 @@ public:
 
     static const int dPenWidth = 3;
 
-    // States map
-    QMap<QString, int> states;
+    // Maps
+    QMap< QString, int > statesMap;
+    QMap< QString, int > scenesMap;
+    QMap< QString, int > gMapsMap;
 
-    // Scenes
+    // Scene
     int scene;
-    QMap< QString, int > scenes;
+
+    // Map
+    int gMap;
 
     // Camera coords
     QPointF cam;
@@ -46,7 +51,7 @@ public:
     QImage backgroundTexture;
 
     // Collision Masks
-    QVector< CMask* > cMasks;
+    QVector <GameMap*> gMaps;
 
     // Buttons
     QVector < QVector <Button*> > buttons;
@@ -56,7 +61,6 @@ public:
     int timerUpdateId;
 
     int timerFps, debugFps;
-
     int timerFpsId;
 
     // Key Bools
@@ -87,7 +91,7 @@ private slots:
     void loadMaps();
     void createAll();
     void addAll();
-    void addFigure(CMask *cMask);
+    void addButtons();
     void addButton(Button *newButton, int sceneId);
     void syncKeyVals();
     void drawMain(QPainter &p);

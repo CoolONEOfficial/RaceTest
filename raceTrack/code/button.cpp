@@ -11,8 +11,8 @@ Button::Button(QObject *parent)
 
     text = "";
 
-    width = 200;
-    height = 100;
+    width = 300;
+    height = 150;
 
     animation.create();
     animation.setX(0);
@@ -25,8 +25,10 @@ Button::Button(QObject *parent)
     visible = true;
 }
 
-Button::Button(QObject *parent, QColor bColor, QString bText, int bWidth, int bHeight, QPointF sCoords, QPointF eCoords, bool bVisible) : QObject(parent)
+Button::Button(QObject *parent, QString bText, QPointF sCoords, QPointF eCoords, int bWidth, int bHeight, QColor bColor, bool bVisible) : QObject(parent)
 {
+    widget = 0;
+
     color = bColor;
 
     text = bText;
@@ -35,10 +37,10 @@ Button::Button(QObject *parent, QColor bColor, QString bText, int bWidth, int bH
     height = bHeight;
 
     animation.create();
-    animation.setX(sCoords.x());
-    animation.setY(sCoords.y());
-    animation.setEndX(eCoords.x());
-    animation.setEndY(eCoords.y());
+    animation.setX(sCoords.x()-width/2);
+    animation.setY(sCoords.y()-height/2);
+    animation.setEndX(eCoords.x()-width/2);
+    animation.setEndY(eCoords.y()-height/2);
     animation.setDuration(2000);
     animation.setEasingCurve(QEasingCurve::OutBack);
 
@@ -80,16 +82,16 @@ int Button::state()
         {
             if(widget->clicked)
             {
-                return widget->states["click"];
+                return widget->statesMap["click"];
             }
             else
             {
-                return widget->states["move"];
+                return widget->statesMap["move"];
             }
         }
         else
         {
-            return widget->states["passive"];
+            return widget->statesMap["passive"];
         }
     }
     else
@@ -131,7 +133,7 @@ void Button::draw(QPainter &p)
             // Draw
             QRect rect;
 
-            if(state() == widget->states["passive"])
+            if(state() == widget->statesMap["passive"])
             {
                 // Shadow
                 p.setBrush(color);
@@ -147,7 +149,7 @@ void Button::draw(QPainter &p)
                 p.drawRect(x(true),
                                         y(true), width, height);
             }
-            else if(state() == widget->states["move"])
+            else if(state() == widget->statesMap["move"])
             {
                 // Shadow
                 p.setBrush(color);
@@ -167,7 +169,7 @@ void Button::draw(QPainter &p)
                 p.drawRect(x(true),
                                         y(true), width, height);
             }
-            else if(state() == widget->states["click"])
+            else if(state() == widget->statesMap["click"])
             {
                 // Button on coords shadow
                 p.setBrush(color);
@@ -180,11 +182,11 @@ void Button::draw(QPainter &p)
             }
 
             // Set font
-            font.setPixelSize(height / 2);
-            p.setFont(font);
+            widget->grobold.setPixelSize(height/2);
+            p.setFont(widget->grobold);
 
             // Draw button text
-            if(state() == widget->states["click"])
+            if(state() == widget->statesMap["click"])
             {
                 // Click pos text
                 rect.setRect(shadowX(true), shadowY(true), width, height);

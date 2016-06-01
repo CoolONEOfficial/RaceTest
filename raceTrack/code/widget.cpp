@@ -22,6 +22,8 @@ Widget::Widget(QWidget *parent) :
     loadAll();
     addAll();
 
+    gMap = gMaps.size()-1;
+
     // Open Window
     ui->setupUi(this);
 
@@ -30,13 +32,15 @@ Widget::Widget(QWidget *parent) :
     // Fullscreen
     showFullScreen();
 
+    addButtons();
+
     // Start Timers
     timerUpdateId = startTimer(1000 / fps);
     timerFpsId = startTimer(1000);
 
-    for(int f = 0; f<buttons[scenes["main"]].size(); f++)
+    for(int f = 0; f<buttons[scenesMap["main"]].size(); f++)
     {
-        buttons[scenes["main"]][f]->animation.start();
+        buttons[scenesMap["main"]][f]->animation.start();
     }
 }
 
@@ -47,21 +51,23 @@ Widget::~Widget()
 
 void Widget::setValues()
 {    
+    // Maps
+
     // States
-    states["passive"] = 0;
-    states["move"] = 1;
-    states["click"] = 2;
+    statesMap["passive"] = 0;
+    statesMap["move"] = 1;
+    statesMap["click"] = 2;
 
     // Scene
-    scenes["main"] = 0;
-    scenes["game"] = 1;
-    scenes["redactor"] = 3;
+    scenesMap["main"] = 0;
+    scenesMap["game"] = 1;
+    scenesMap["redactor"] = 3;
 
-    scene = scenes["main"];
+    scene = scenesMap["main"];
 
     // Vectors
     QVector<Button *> newVector;
-    for(int f = 0; f<scenes.size(); f++)
+    for(int f = 0; f<scenesMap.size(); f++)
     {
         buttons.push_back(newVector);
     }
@@ -69,15 +75,11 @@ void Widget::setValues()
     // Bools
 
     // Keys
-    // Android auto press
+
     keyUpPressed = false;
     keyDownPressed = false;
     keyLeftPressed = false;
     keyRightPressed = false;
-
-    #ifdef __ANDROID_API__
-        keyUpPressed = true;
-    #endif
 
     // Sync
     syncKeyVals();
@@ -85,26 +87,13 @@ void Widget::setValues()
     // Click bool
     clicked = false;
 
-    // Main Buttons
-    Button *mainButton = new Button(this, Qt::blue, "Play", 300, 150, QPointF(-150,height()*2-150-20),
-                                    QPointF(width()*2/8,height()*2-150-20));
-    loadFont(mainButton->font, "grobold");
+    // Animations
 
-    addButton(mainButton, scenes["main"]);
-
-    mainButton = new Button(this, Qt::blue, "Exit", 300, 150, QPointF(width()*2+150,height()*2-150-20),
-                                    QPointF(width()*2-width()*2/3,height()*2-150-20));
-    loadFont(mainButton->font, "grobold");
-
-    addButton(mainButton, scenes["main"]);
-
-    for(int f1 = 0; f1<scenes.size(); f1++)
-    {
-        for(int f2 = 0; f2<buttons[f1].size(); f2++)
-        {
-            buttons[f1][f2]->setWidget(this);
-        }
-    }
+    // Screen car
+    screenCar.create();
+    screenCar.setDuration(300);
+    screenCar.setX(width()/2);
+    screenCar.setY(height()/2);
 }
 
 void Widget::loadAll()
@@ -136,7 +125,12 @@ void Widget::loadMaps()
 
         // Load vals
         bool loadCMask = false;
+        bool loadMap = false;
+        bool loadPlayer = false;
+        bool loadPoly = false;
+        GameMap *addGMap = 0;
         CMask *addCMask = 0;
+        QPolygon addPoly;
 
         do
         {
@@ -144,72 +138,189 @@ void Widget::loadMaps()
             QString command;
             sMaps>>command;
 
-            if(command == "cmask")
-            {
-                loadCMask = true;
+            // Map
 
-                // Create cmask
-                addCMask = new CMask(this, true, 0, 0, QPolygonF(), backgroundTexture);
+            if(command == "map")
+            {
+                loadMap = true;
+
+                // Read name
+                QString nameMap;
+                sMaps>>nameMap;
+
+                // Create gmap
+                addGMap = new GameMap(this, nameMap);
             }
 
-            else if(command == "/cmask")
+            else if(command == "/map")
             {
-                loadCMask = false;
+                loadMap = false;
 
-                // Add cmask
-                addFigure(addCMask);
+                // Add gmap
+                gMaps.push_back(addGMap);
             }
 
-            else if(loadCMask)
+            // Map commands
+
+            else if(loadMap)
             {
-                // Solid
-                if(command == "solid")
-                {
-                    // Read solidId
-                    int solidId;
-                    sMaps>>solidId;
+                // Player
 
-                    // Set solid
-                    if(solidId == 0)
-                        addCMask->solid = false;
-                    else
-                        addCMask->solid = true;
+                if(command == "player")
+                {
+                    loadPlayer = true;
                 }
 
-                // Rect
-                else if(command == "rect")
+                else if(command == "/player")
                 {
-                    // Read rect
-                    int x,y,w,h;
-
-                    // Load rect
-                    sMaps>>x;
-                    sMaps>>y;
-                    sMaps>>w;
-                    sMaps>>h;
-
-                    // Set rect
-                    addCMask->setRect(QRectF(x, y, w, h));
+                    loadPlayer = false;
                 }
 
-                // Coords
-                else if(command == "coords")
+                // Player Commands
+
+                else if(loadPlayer)
                 {
-                    // Read rect
-                    int x,y;
+                    if(command == "startCoords")
+                    {
+                        int sX = 0, sY = 0;
 
-                    // Load rect
-                    sMaps>>x;
-                    sMaps>>y;
+                        sMaps>>sX;
+                        sMaps>>sY;
 
-                    // Set rect
-                    addCMask->setCoords(QPointF(x, y));
+                        addGMap->playerX = sX;
+                        addGMap->playerY = sY;
+                    }
+
+                    else if(command == "startX")
+                    {
+                        int sX = 0;
+
+                        sMaps>>sX;
+
+                        addGMap->playerX = sX;
+                    }
+
+                    else if(command == "startY")
+                    {
+                        int sY = 0;
+
+                        sMaps>>sY;
+
+                        addGMap->playerY = sY;
+                    }
+                }
+
+                // CMask
+
+                else if(command == "cmask")
+                {
+                    loadCMask = true;
+
+                    // Create cmask
+                    addCMask = new CMask(this, true, 0, 0, QPolygonF(), backgroundTexture);
+                }
+
+                else if(command == "/cmask")
+                {
+                    loadCMask = false;
+
+                    // Add cmask
+                    addGMap->addFigure(addCMask);
+                }
+
+                // Cmask commands
+
+                else if(loadCMask)
+                {
+                    // Coords
+                    if(command == "coords")
+                    {
+                        // Read rect
+                        int x,y;
+
+                        // Load rect
+                        sMaps>>x;
+                        sMaps>>y;
+
+                        // Set rect
+                        addCMask->setCoords(QPointF(x, y));
+                    }
+
+                    // Solid
+                    else if(command == "solid")
+                    {
+                        // Read solidId
+                        int solidId;
+                        sMaps>>solidId;
+
+                        // Set solid
+                        if(solidId == 0)
+                            addCMask->solid = false;
+                        else
+                            addCMask->solid = true;
+                    }
+
+                    // Rect
+                    else if(command == "rect")
+                    {
+                        // Read rect
+                        int x,y,w,h;
+
+                        // Load rect
+                        sMaps>>x;
+                        sMaps>>y;
+                        sMaps>>w;
+                        sMaps>>h;
+
+                        // Set rect
+                        addCMask->setRect(QRectF(x, y, w, h));
+                    }
+
+                    // Poly
+
+                    else if(command == "poly")
+                    {
+                        loadPoly = true;
+                    }
+
+                    else if(command == "/poly")
+                    {
+                        loadPoly = false;
+                    }
+
+                    // Poly commands
+
+                    else if(loadPoly)
+                    {
+                        if(command == "add")
+                        {
+                            // Create coords
+                            int x,y;
+
+                            // Read coods
+                            sMaps>>x;
+                            sMaps>>y;
+
+                            // Add point
+                            addPoly.push_back(QPoint(x,y));
+                        }
+                    }
                 }
             }
         }while(!sMaps.atEnd());
     }
+    else
+    {
+        QMessageBox::information(0, "Error load maps", path);
+    }
 
     fMaps.close();
+
+    // Add gMaps to QMap
+    for(int f = 0; f<gMaps.size(); f++)
+    {
+        gMapsMap[ gMaps[f]->name ] = f;
+    }
 }
 
 void Widget::createAll()
@@ -225,17 +336,41 @@ void Widget::addAll()
     // Wheels
     player->addWheelManual(new Wheel(this, player->width()/3, player->height()/2, 20, 10));
     player->addWheelStatic(new Wheel(this, -player->width()/3, player->height()/2, 20, 10));
-
-    screenCar.create();
-    screenCar.setDuration(300);
-    screenCar.setX(width()/2);
-    screenCar.setY(height()/2);
 }
 
-void Widget::addFigure(CMask *cMask)
+void Widget::addButtons()
 {
-    // Add figure cMask
-    cMasks.push_back(cMask);
+    // Add Buttons
+
+    // Main Buttons
+    int w,h,x,y;
+
+    w = width() / 5;
+    h = w/2;
+
+    x = width() / 3;
+    y = height() - h;
+
+    Button *mainButton = new Button(this, "Play", QPointF(-w/2,y),
+                                    QPointF(x,y), w, h);
+
+    addButton(mainButton, scenesMap["main"]);
+
+    x = width() / 3 * 2;
+    y = height() - h;
+
+    mainButton = new Button(this, "Exit", QPointF(width()+w/2,y),
+                                        QPointF(x,y), w, h);
+
+    addButton(mainButton, scenesMap["main"]);
+
+    for(int f1 = 0; f1<scenesMap.size(); f1++)
+    {
+        for(int f2 = 0; f2<buttons[f1].size(); f2++)
+        {
+            buttons[f1][f2]->setWidget(this);
+        }
+    }
 }
 
 void Widget::addButton(Button *newButton, int sceneId)
@@ -261,13 +396,20 @@ void Widget::syncKeyVals()
 
 void Widget::drawMain(QPainter &p)
 {
-    magneto.setPixelSize(height()/2/3);
+    QBrush backgroundBrush;
+    backgroundBrush.setColor(Qt::blue);
+    p.setBrush(backgroundBrush);
+    p.drawRect(0, 0, width(), height());
+
+    // Draw Logo Text
+    magneto.setPixelSize(width()/7);
     p.setFont(magneto);
     p.drawText(QRect(0,height()/2,width(), height()/3*2), Qt::AlignHCenter, "RaceTrack");
 
-    for(int f = 0; f<buttons[scenes["main"]].size(); f++)
+    // Draw buttons
+    for(int f = 0; f<buttons[scenesMap["main"]].size(); f++)
     {
-        buttons[scenes["main"]][f]->draw(p);
+        buttons[scenesMap["main"]][f]->draw(p);
     }
 }
 
@@ -281,9 +423,12 @@ void Widget::drawGame(QPainter &p)
     p.translate(-player->x, -player->y);
 
     // Draw collision masks
-    for(int f = 0; f<cMasks.size(); f++)
+    if(gMaps.size() > 0 && gMap>=0 && gMap<gMaps.size())
     {
-        cMasks[f]->draw(p);
+        for(int f = 0; f<gMaps[gMap]->cMasks.size(); f++)
+        {
+            gMaps[gMap]->cMasks[f]->draw(p);
+        }
     }
 
     // Draw Player
@@ -296,9 +441,7 @@ void Widget::drawGame(QPainter &p)
 
     p.translate(cam.x(), cam.y());
 
-    // Debug
-
-
+// Debug Texts
 #ifdef QT_DEBUG
     #ifndef __ANDROID_API__
 
@@ -410,37 +553,25 @@ void Widget::paintEvent(QPaintEvent *)
     p.setRenderHints(QPainter::Antialiasing);
 
     // Game
-    if(scene == scenes["game"])
+    if(scene == scenesMap["game"])
     {
         // Draw Game
         drawGame(p);
     }
 
     // Main
-    else if(scene == scenes["main"])
+    else if(scene == scenesMap["main"])
     {
         // Draw main
         drawMain(p);
     }
 
     // Redactor
-    else if(scene == scenes["redactor"])
+    else if(scene == scenesMap["redactor"])
     {
         // Draw main
         drawRedactor(p);
     }
-
-//    p.drawText(10,15,"moveX:"+QString::number(move.x()));
-//    p.drawText(10,15*2,"moveY:"+QString::number(move.y()));
-//    p.drawText(10,15*3,"clickX:"+QString::number(click.x()));
-//    p.drawText(10,15*4,"clickY:"+QString::number(click.y()));
-//    p.drawText(10,15*5,"releaseX:"+QString::number(release.x()));
-//    p.drawText(10,15*6,"releaseY:"+QString::number(release.y()));
-//    if(clicked)
-//        p.drawText(10,15*7,"clicked:true");
-//    else
-//        p.drawText(10,15*7,"clicked:false");
-//    p.drawText(10,15*8,"state:"+QString::number(buttonMainPlay.state));
 }
 
 void Widget::keyPressEvent(QKeyEvent *event)
@@ -620,9 +751,16 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
 
 void Widget::buttonClicked(int id)
 {
-    if(id == buttonsId["play"])
+    // Play Button
+    if(id == buttonsId["Play"])
     {
-        scene = scenes["game"];
+        scene = scenesMap["game"];
+    }
+
+    //  Exit Button
+    else if(id == buttonsId["Exit"])
+    {
+        QApplication::exit();
     }
 }
 
@@ -642,7 +780,7 @@ void Widget::mouseReleaseEvent(QMouseEvent *event)
     }
 
 #ifdef __ANDROID_API__
-    if(scene == scenes["game"])
+    if(scene == scenesMap["game"])
     {
         keyUpPressed = false;
         keyDownPressed = false;
