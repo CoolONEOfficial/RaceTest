@@ -48,7 +48,7 @@ public:
     AnimationCoords screenCar;
 
     // Images
-    QImage backgroundTexture;
+    QImage backgroundTexture, mainTexture;
 
     // Collision Masks
     QVector <GameMap*> gMaps;
@@ -97,6 +97,8 @@ private slots:
     void drawMain(QPainter &p);
     void drawGame(QPainter &p);
     void drawRedactor(QPainter &p);
+    void drawShadowText(QPainter &p, QPoint coords, QString str, int size, QColor colorText = QColor(0,0,0,0));
+    void drawShadowText(QPainter &p, QRect rect, QString str, int size, QColor colorText = QColor(0,0,0,0));
     void mousePressEvent(QMouseEvent *);
     void mouseReleaseEvent(QMouseEvent *);
     void mouseMoveEvent(QMouseEvent *);

@@ -156,7 +156,7 @@ void Button::draw(QPainter &p)
                 p.drawRect(shadowX(true),
                                         shadowY(true), width, height);
 
-                p.setBrush(QColor(255, 255, 255, 100));
+                p.setBrush(QColor(0, 0, 0, 100));
                 p.drawRect(shadowX(true),
                                         shadowY(true), width, height);
 
@@ -165,7 +165,7 @@ void Button::draw(QPainter &p)
                 p.drawRect(x(true),
                                         y(true), width, height);
 
-                p.setBrush(QColor(255, 255, 255, 100));
+                p.setBrush(QColor(0, 0, 0, 100));
                 p.drawRect(x(true),
                                         y(true), width, height);
             }

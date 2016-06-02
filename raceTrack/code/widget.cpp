@@ -110,6 +110,7 @@ void Widget::loadAll()
 
     // Background Texture
     loadImage(backgroundTexture, ":/texture");
+    loadImage(mainTexture, ":/maintexture");
 }
 
 void Widget::loadMaps()
@@ -309,10 +310,6 @@ void Widget::loadMaps()
             }
         }while(!sMaps.atEnd());
     }
-    else
-    {
-        QMessageBox::information(0, "Error load maps", path);
-    }
 
     fMaps.close();
 
@@ -384,27 +381,35 @@ void Widget::addButton(Button *newButton, int sceneId)
 
 void Widget::syncKeyVals()
 {
+    #ifdef __ANDROID_API__
+        if(!keyDownPressed)
+            keyUpPressed = true;
+    #endif
+
     player->keyUp = keyUpPressed;
     player->keyDown = keyDownPressed;
     player->keyLeft = keyLeftPressed;
     player->keyRight = keyRightPressed;
-
-    #ifdef __ANDROID_API__
-        keyUpPressed = true;
-    #endif
 }
 
 void Widget::drawMain(QPainter &p)
 {
-    QBrush backgroundBrush;
-    backgroundBrush.setColor(Qt::blue);
-    p.setBrush(backgroundBrush);
-    p.drawRect(0, 0, width(), height());
+    p.setBrush(Qt::blue);
+    p.drawRect(0,0,width(),height());
+
+    p.translate(move.x()/4, move.y()/4);
+    QBrush mainBrush;
+    mainBrush.setTextureImage(mainTexture);
+    p.setBrush(mainBrush);
+    p.drawRect(-width(),-height(), width()*2, height()*2);
+    p.translate(-move.x()/4, -move.y()/4);
 
     // Draw Logo Text
     magneto.setPixelSize(width()/7);
     p.setFont(magneto);
-    p.drawText(QRect(0,height()/2,width(), height()/3*2), Qt::AlignHCenter, "RaceTrack");
+    QRect textRect(0,height()/2, width(), height()/3*2);
+    drawShadowText(p, textRect, "RaceTrack", 10, Qt::blue);
+    p.drawText(textRect, Qt::AlignHCenter, "RaceTrack");
 
     // Draw buttons
     for(int f = 0; f<buttons[scenesMap["main"]].size(); f++)
@@ -441,10 +446,26 @@ void Widget::drawGame(QPainter &p)
 
     p.translate(cam.x(), cam.y());
 
-// Debug Texts
-#ifdef QT_DEBUG
-    #ifndef __ANDROID_API__
+    #ifdef __ANDROID_API__
+        // Android Buttons
+        if(keyDownPressed)
+        {
+            p.drawRect(width()/3, height()/3, width()/3, height()/3);
+        }
 
+        if(keyLeftPressed)
+        {
+            p.drawRect(0, height()/3, width()/3, height()/3);
+        }
+
+        if(keyRightPressed)
+        {
+            p.drawRect(width()/3*2, height()/3, width()/3, height()/3);
+        }
+    #endif
+
+    // Debug Texts
+    #ifdef QT_DEBUG
         // Rect
         QBrush brush;
         brush.setStyle(Qt::SolidPattern);
@@ -514,30 +535,48 @@ void Widget::drawGame(QPainter &p)
                 p.drawText(f*100+500, 15*(4+f2), "size: "+QString::number(player->wheelsStatic[f]->tracks[f2].size()));
             }
         }
-
-    #else
-        // Android Buttons
-        if(keyDownPressed)
-        {
-            p.drawRect(width()/3, height()/2, width()/3, height()/2);
-        }
-
-        if(keyLeftPressed)
-        {
-            p.drawRect(0, height()/2, width()/3, height()/2);
-        }
-
-        if(keyRightPressed)
-        {
-            p.drawRect(width()/3*2, height()/2, width()/3, height()/2);
-        }
     #endif
-#endif
 }
 
 void Widget::drawRedactor(QPainter &p)
 {
 
+}
+
+void Widget::drawShadowText(QPainter &p, QPoint coords, QString str, int size, QColor colorText)
+{
+    // Draw Shadow for text
+    QPen oldPen = p.pen(),pen;
+    if(colorText != QColor(0,0,0,0))
+    {
+        pen.setColor(colorText);
+        p.setPen(pen);
+    }
+
+    p.drawText(coords.x()-size, coords.y()-size, str);
+    p.drawText(coords.x()+size, coords.y()+size, str);
+    p.drawText(coords.x()+size, coords.y()-size, str);
+    p.drawText(coords.x()-size, coords.y()+size, str);
+
+    p.setPen(oldPen);
+}
+
+void Widget::drawShadowText(QPainter &p, QRect rect, QString str, int size, QColor colorText)
+{
+    // Draw Shadow for text
+    QPen oldPen = p.pen(),pen;
+    if(colorText != QColor(0,0,0,0))
+    {
+        pen.setColor(colorText);
+        p.setPen(pen);
+    }
+
+    p.drawText(QRect(rect.x()-size, rect.y()-size, rect.width(), rect.height()), Qt::AlignHCenter, str);
+    p.drawText(QRect(rect.x()+size, rect.y()+size, rect.width(), rect.height()), Qt::AlignHCenter, str);
+    p.drawText(QRect(rect.x()+size, rect.y()-size, rect.width(), rect.height()), Qt::AlignHCenter, str);
+    p.drawText(QRect(rect.x()-size, rect.y()+size, rect.width(), rect.height()), Qt::AlignHCenter, str);
+
+    p.setPen(oldPen);
 }
 
 void Widget::paintEvent(QPaintEvent *)
@@ -718,7 +757,7 @@ void Widget::mousePressEvent(QMouseEvent *event)
     click.setY(event->y());
 
     #ifdef __ANDROID_API__
-        if(event->y() > height()/2)
+        if(event->y() > height()/3)
         {
             if(event->x() < width() / 3)
             {
@@ -746,7 +785,9 @@ void Widget::mouseMoveEvent(QMouseEvent *event)
     move.setX(event->x());
     move.setY(event->y());
 
-//    buttons[scenes["main"]][0]->setCoords(QPointF(event->x(), event->y()));
+    #ifdef __ANDROID_API__
+        mousePressEvent(event);
+    #endif
 }
 
 void Widget::buttonClicked(int id)
@@ -760,7 +801,7 @@ void Widget::buttonClicked(int id)
     //  Exit Button
     else if(id == buttonsId["Exit"])
     {
-        QApplication::exit();
+        QApplication::quit();
     }
 }
 
@@ -771,6 +812,7 @@ void Widget::mouseReleaseEvent(QMouseEvent *event)
     release.setX(event->x());
     release.setY(event->y());
 
+    // Check Buttons
     for(int f = 0; f<buttons[scene].size(); f++)
     {
         if(buttons[scene][f]->inside(event->x(), event->y()))
@@ -779,20 +821,21 @@ void Widget::mouseReleaseEvent(QMouseEvent *event)
         }
     }
 
-#ifdef __ANDROID_API__
-    if(scene == scenesMap["game"])
-    {
-        keyUpPressed = false;
-        keyDownPressed = false;
-        keyLeftPressed = false;
-        keyRightPressed = false;
+    // Off all values
+    #ifdef __ANDROID_API__
+        if(scene == scenesMap["game"])
+        {
+            keyUpPressed = false;
+            keyDownPressed = false;
+            keyLeftPressed = false;
+            keyRightPressed = false;
 
-        // Sync
-        syncKeyVals();
+            // Sync
+            syncKeyVals();
 
-        player->addTrackBranches();
-    }
-#endif
+            player->addTrackBranches();
+        }
+    #endif
 }
 
 void Widget::loadFont(QFont &font, const QString &name)
