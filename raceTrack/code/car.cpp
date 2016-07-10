@@ -1,9 +1,9 @@
 #include "car.h"
 #include "widget.h"
-#include <QPainter>
 #include <math.h>
+
+#include <QPainter>
 #include <QTimerEvent>
-#include <QApplication>
 #include <fstream>
 #include <QPoint>
 #include <QVector>
@@ -144,11 +144,32 @@ void Car::move()
     y += vY;
 
     // Rotate car
-    rotate(speedScale() * whellsAngle);
+    float rotateAngle = speedScale() * whellsAngle;
+    rotate(rotateAngle);
 
     // Drift
     if(keyDown)
         rotate(speedScale()/2 * whellsAngle);
+
+    // Move whellsAngle to 0
+    if(!keyLeft && !keyRight)
+    {
+        whellsAngle *= 0.95;
+
+        if(whellsAngle < 1e-3 &&
+           whellsAngle > -1e-3)
+            whellsAngle = 0;
+    }
+
+    // Move speed to 0
+    if(!keyUp && !keyDown)
+    {
+        speed *= 0.995;
+
+        if(speed < 1e-3 &&
+           speed > -1e-3)
+            speed = 0;
+    }
 
     if( w != 0 )
     {
@@ -173,6 +194,7 @@ void Car::move()
             }
         }
 
+        // ScreenCar
         if(!keyUp && !keyDown)
         {
             // Center
@@ -220,25 +242,8 @@ void Car::move()
             w->screenCar.start(true, false);
             w->screenCar.setDuration( w->screenCar.dDuration );
         }
-    }
 
-    // Move whellsAngle to 0
-    whellsAngle *= 0.95;
-
-    if(whellsAngle < 1e-3 &&
-       whellsAngle > -1e-3)
-        whellsAngle = 0;
-
-    // Move speed to 0
-    speed *= 0.995;
-
-    if(speed < 1e-3 &&
-       speed > -1e-3)
-        speed = 0;
-
-    // Move Camera
-    if(w != 0)
-    {
+        // Move Camera
         w->cam.setX(x - w->screenCar.x);
         w->cam.setY(y - w->screenCar.y);
     }
@@ -299,15 +304,18 @@ void Car::keyDownEvent()
     if(speed > -fabs(speedBackMax))
     {
 
+        // Back Boost
+        float backBoost = boostBack*speedScale()+0.01;
+
         // Drift
-        if(speed > 0)
+        if(drift())
         {
             // Add Tracks
             addTracks();
+            backBoost /= 2;
         }
 
-        // Back Boost
-        speed -= boostBack*speedScale()+0.01;
+        speed -= backBoost;
     }
 }
 
@@ -322,9 +330,6 @@ void Car::rotate(float rotateAngle)
 
 void Car::rotateWheels(float rotateAngle)
 {
-    // Correct
-//    correctAngle(rotateAngle);
-
     // Rotate
     whellsAngle += rotateAngle;
 

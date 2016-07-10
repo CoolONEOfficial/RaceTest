@@ -24,7 +24,8 @@ SOURCES += main.cpp\
     animation.cpp \
     animationcoords.cpp \
     button.cpp \
-    gamemap.cpp
+    gamemap.cpp \
+    buttonclick.cpp
 
 HEADERS  += widget.h \
     car.h \

@@ -1,4 +1,5 @@
 #include "widget.h"
+
 #include <QMessageBox>
 #include <QPainter>
 #include <QTimerEvent>
@@ -17,11 +18,6 @@ Wheel::Wheel(QObject *parent, float wX, float wY, float wW, float wH)
     // Start Timers
     timerDeleteId = startTimer(100);
 }
-
-//Wheel *Wheel::newMirror()
-//{
-//    return new Wheel(parent(), x, -y, width, height);
-//}
 
 void Wheel::setParams(float wX, float wY, float wW, float wH)
 {

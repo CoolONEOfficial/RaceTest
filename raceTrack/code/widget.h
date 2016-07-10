@@ -31,6 +31,8 @@ public:
     QMap< QString, int > statesMap;
     QMap< QString, int > scenesMap;
     QMap< QString, int > gMapsMap;
+    QVector < QMap< QString, int > > buttonsMap;
+    QMap< int, int > buttonMapToGMapMap;
 
     // Scene
     int scene;
@@ -55,7 +57,6 @@ public:
 
     // Buttons
     QVector < QVector <Button*> > buttons;
-    QMap< QString, int > buttonsId;
 
     // Timer Update
     int timerUpdateId;
@@ -97,12 +98,17 @@ private slots:
     void drawMain(QPainter &p);
     void drawGame(QPainter &p);
     void drawRedactor(QPainter &p);
-    void drawShadowText(QPainter &p, QPoint coords, QString str, int size, QColor colorText = QColor(0,0,0,0));
-    void drawShadowText(QPainter &p, QRect rect, QString str, int size, QColor colorText = QColor(0,0,0,0));
+    void drawMaps(QPainter &p);
+    void drawButtons(QPainter &p);
+    void drawButtons(QPainter &p, int sceneId);
+    void drawShadowText(QPainter &p, QPoint coords, QString str, int size, QColor colorText = Qt::black, QColor colorShadow = Qt::blue);
+    void drawShadowText(QPainter &p, QRect rect, QString str, int size, QColor colorText = Qt::black, QColor colorShadow = Qt::blue);
+    void drawBackground(QPainter &p);
+    void setScene(int sceneId, bool startAnimations = true);
     void mousePressEvent(QMouseEvent *);
     void mouseReleaseEvent(QMouseEvent *);
     void mouseMoveEvent(QMouseEvent *);
-    void buttonClicked(int id);
+    void buttonClick(int id);
 
 private:
     Ui::Widget *ui;

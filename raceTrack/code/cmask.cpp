@@ -1,4 +1,5 @@
 #include "cmask.h"
+
 #include <QPainter>
 
 CMask::CMask(QObject *parent)
