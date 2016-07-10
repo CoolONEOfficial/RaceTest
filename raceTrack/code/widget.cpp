@@ -18,22 +18,20 @@ Widget::Widget(QWidget *parent) :
     srand(time(0));
 
     // Set and Load Default values
-    createAll();
     setValues();
     loadAll();
-    addAll();
-
-    gMap = gMaps.size()-1;
 
     // Open Window
     ui->setupUi(this);
 
+    // Mouse tracking
     setMouseTracking(true);
 
     // Fullscreen
     showFullScreen();
 
-    addButtons();
+    // Add all
+    addAll();
 
     // Start Timers
     timerUpdateId = startTimer(1000 / fps);
@@ -51,7 +49,10 @@ Widget::~Widget()
 }
 
 void Widget::setValues()
-{    
+{
+    // Create player
+    player = new Car(this);
+
     // QMaps
 
     // States
@@ -81,6 +82,8 @@ void Widget::setValues()
     {
         buttonsMap.push_back(newMap);
     }
+
+    gMap = 0;
 
     // Bools
 
@@ -121,6 +124,14 @@ void Widget::loadAll()
     // Background Texture
     loadImage(backgroundTexture, ":/texture");
     loadImage(mainTexture, ":/maintexture");
+
+    // Logo
+    loadImage(mainLogo, ":/logo");
+
+    // Cursors
+    loadCursor(cursor, "default");
+    loadCursor(cursorHand, "hand");
+    loadCursor(cursorCHand, "cHand");
 }
 
 void Widget::loadMaps()
@@ -333,19 +344,14 @@ void Widget::loadMaps()
     }
 }
 
-void Widget::createAll()
-{
-    // Create all
-
-    // Cars
-    player = new Car(this);
-}
-
 void Widget::addAll()
 {
     // Wheels
     player->addWheelManual(new Wheel(this, player->width()/3, player->height()/2, 20, 10));
     player->addWheelStatic(new Wheel(this, -player->width()/3, player->height()/2, 20, 10));
+
+    // Buttons
+    addButtons();
 }
 
 void Widget::addButtons()
@@ -379,6 +385,17 @@ void Widget::addButtons()
     addButton(mainButton, scenesMap["main"]);
 
     // ----------------------------------------- Maps Buttons -----------------------------------------
+
+    GameMap *testMap = new GameMap(this, "TestMap");
+
+    testMap->addFigure(new CMask(this, false, 0, 0, QRect(-300, -300, 600, 600)));
+
+    gMaps.push_back(testMap);
+
+    GameMap *emptyMap = new GameMap(this, "Empty");
+
+    gMaps.push_back(emptyMap);
+
     for(int f = 0; f<gMaps.size(); f++)
     {
         // Set Width / Height
@@ -432,6 +449,9 @@ void Widget::syncKeyVals()
 
 void Widget::drawMain(QPainter &p)
 {
+    // Draw logo
+    p.drawImage(QRect(width()/10*3, height()/8, width() - (width()/10*3*2), height()/3), mainLogo);
+
     // Draw Logo Text
 
     // Set font
@@ -473,21 +493,21 @@ void Widget::drawGame(QPainter &p)
 
     p.translate(cam.x(), cam.y());
 
-    #ifdef __ANDROID_API__
+    #ifdef ANDROID
         // Android Buttons
         if(keyDownPressed)
         {
-            p.drawRect(width()/3, height()/3, width()/3, height()/3);
+            p.drawRect(width()/3, height()/3*2, width()/3, height()/3);
         }
 
         if(keyLeftPressed)
         {
-            p.drawRect(0, height()/3, width()/3, height()/3);
+            p.drawRect(0, height()/3*2, width()/3, height()/3);
         }
 
         if(keyRightPressed)
         {
-            p.drawRect(width()/3*2, height()/3, width()/3, height()/3);
+            p.drawRect(width()/3*2, height()/3*2, width()/3, height()/3);
         }
     #endif
 
@@ -655,6 +675,34 @@ void Widget::drawShadowText(QPainter &p, QRect rect, QString str, int size, QCol
     p.setPen(oldPen);
 }
 
+void Widget::drawShadowLine(QPainter &p, QLine line, int size, QColor colorLine, QColor colorShadow)
+{
+    QPen oldPen = p.pen(), pen;
+
+    // Draw
+
+    // Shadow
+    pen.setColor(colorShadow);
+
+    pen.setWidth(oldPen.width() + size);
+
+    p.setPen(pen);
+
+    p.drawLine(line);
+
+    // Line
+    pen.setColor(colorLine);
+
+    pen.setWidth(oldPen.width());
+
+    p.setPen(pen);
+
+    p.drawLine(line);
+
+    // Set Old pen
+    p.setPen(oldPen);
+}
+
 void Widget::drawBackground(QPainter &p)
 {
     // Draw Background
@@ -701,7 +749,11 @@ void Widget::setScene(int sceneId, bool startAnimations)
 
 void Widget::paintEvent(QPaintEvent *)
 {
+    // Create painter
     QPainter p(this);
+
+    // Set cursor
+    setCustomCursor();
 
     // Set pen width
     QPen pen;
@@ -853,6 +905,11 @@ void Widget::loadImage(QImage &image, const QString &imageName)
     QString path = imageName;
 
     image.load(path);
+}
+
+void Widget::loadCursor(QCursor &cursor, const QString &name)
+{
+    cursor = QCursor(QPixmap(":/cursors/"+name));
 }
 
 void Widget::drawTexture(QPainter &p, QImage texture, QRectF rect)

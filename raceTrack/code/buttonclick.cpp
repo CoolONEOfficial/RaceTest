@@ -28,3 +28,29 @@ void Widget::buttonClick(int id)
         setScene(scenesMap["game"]);
     }
 }
+
+void Widget::setCustomCursor()
+{
+    if(scene != scenesMap["game"])
+    {
+        setCursor(cursor);
+        for(int f = 0; f<buttons[scene].size(); f++)
+        {
+            if(buttons[scene][f]->inside(move.x(), move.y()))
+            {
+                if(clicked)
+                {
+                    setCursor(cursorCHand);
+                }
+                else
+                {
+                    setCursor(cursorHand);
+                }
+            }
+        }
+    }
+    else
+    {
+        setCursor(Qt::BlankCursor);
+    }
+}

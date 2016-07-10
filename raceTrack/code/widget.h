@@ -32,7 +32,6 @@ public:
     QMap< QString, int > scenesMap;
     QMap< QString, int > gMapsMap;
     QVector < QMap< QString, int > > buttonsMap;
-    QMap< int, int > buttonMapToGMapMap;
 
     // Scene
     int scene;
@@ -51,6 +50,7 @@ public:
 
     // Images
     QImage backgroundTexture, mainTexture;
+    QImage mainLogo;
 
     // Collision Masks
     QVector <GameMap*> gMaps;
@@ -77,9 +77,15 @@ public:
     // Fonts
     QFont magneto, grobold;
 
+    // Cursors
+    QCursor cursor;
+    QCursor cursorHand;
+    QCursor cursorCHand;
+
 public slots:
     void loadImage(QImage &image, const QString &imageName );
     void loadFont(QFont &font, const QString &name);
+    void loadCursor(QCursor &cursor, const QString &name);
 
 private slots:
     void paintEvent(QPaintEvent *);
@@ -90,7 +96,6 @@ private slots:
     void setValues();
     void loadAll();
     void loadMaps();
-    void createAll();
     void addAll();
     void addButtons();
     void addButton(Button *newButton, int sceneId);
@@ -103,12 +108,14 @@ private slots:
     void drawButtons(QPainter &p, int sceneId);
     void drawShadowText(QPainter &p, QPoint coords, QString str, int size, QColor colorText = Qt::black, QColor colorShadow = Qt::blue);
     void drawShadowText(QPainter &p, QRect rect, QString str, int size, QColor colorText = Qt::black, QColor colorShadow = Qt::blue);
+    void drawShadowLine(QPainter &p, QLine line, int size, QColor colorLine = Qt::black, QColor colorShadow = Qt::blue);
     void drawBackground(QPainter &p);
     void setScene(int sceneId, bool startAnimations = true);
     void mousePressEvent(QMouseEvent *);
     void mouseReleaseEvent(QMouseEvent *);
     void mouseMoveEvent(QMouseEvent *);
     void buttonClick(int id);
+    void setCustomCursor();
 
 private:
     Ui::Widget *ui;

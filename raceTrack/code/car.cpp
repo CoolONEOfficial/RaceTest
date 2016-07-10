@@ -111,13 +111,8 @@ void Car::drawCar(QPainter &p, float carAngle)
         p.translate(x, y);
         p.rotate(carAngle);
 
-            // Random
-            int random = 0;
-            if(!keyUp && !keyDown)
-                random = (rand()%3)-1;
-
             // Draw
-            p.drawImage(QRect(-(carWidth()/2 + random), -(carHeight()/2 + random),
+            p.drawImage(QRect(-(carWidth()/2), -(carHeight()/2),
                               carWidth(), carHeight()), image);
 
         // UnRotate
@@ -207,7 +202,7 @@ void Car::move()
             w->screenCar.setEndY(w->height()/4*3);
             w->screenCar.start(true, false);
         }
-        else if(speed < 0 && !keyUp)
+        else if(speed < 0 && keyDown)
         {
             // Car up
             w->screenCar.setEndY(w->height()/4);
